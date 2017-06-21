@@ -798,51 +798,51 @@ gravy.calc.lnlike.nowithinregion.harriet <- function( dataMatrix, model, noorig 
 
 mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
   # Faster function to calculate S_ij, the sum of population densities
-  # within radius r_ij, 
+  # within radius r_ij,
   # for each origin-destination pair.
-  # Inputs: 
+  # Inputs:
   # popmatrix is raster
   # D is number of districts
   # A is number of age groups
   # Outputs:
   #  S -- matrix of S_ij, where rows correspond
-  # to originindices, and columns to destinations. 
-  
+  # to originindices, and columns to destinations.
+
   # within region mixing
   r_forfirstcell=values(distanceFromPoints(popmatrix, xyFromCell(popmatrix,1)))
-  
-  # distance between first and second  
+
+  # distance between first and second
   xlength=r_forfirstcell[2]
-  
+
   #distance between first and the second row
   ylength=r_forfirstcell[ncol(popmatrix)+1]
   dwr_r=distancewithinarectangle(xlength,ylength)
-  
-  S = matrix( 0, nrow=D*A, ncol=D*A) 
+
+  S = matrix( 0, nrow=D*A, ncol=D*A)
   i=1
   while (i <= (D*A)) {
     #print(i)
     ai=i%%A; ai[ai==0]=A
-    di=(i-ai)/A +1  
-    
+    di=(i-ai)/A +1
+
     n_orig = popsize_vector[i] # density in cell i
-    
+
     d.ij=values(distanceFromPoints(popmatrix, xyFromCell(popmatrix,di)))
     d.ij[di]=dwr_r #distance within that district
     popsize=popsize_vector
     destcells = 1:(D*A) #list of destination cells
-    neworder=order(d.ij) #orders by the distance away 
+    neworder=order(d.ij) #orders by the distance away
     d.ij = d.ij[neworder]
     popsize = popsize[neworder]
     destcells = destcells[neworder]
-    
+
     S.ij = vector(len=D*A)
     rollingsum_ind = 1
     rollingsum = 0
     uni_dist = unique(d.ij)
     for (k in 1:length(uni_dist)){
-      
-      # finds cells which are the same distance away  
+
+      # finds cells which are the same distance away
       samedist_ind = which(d.ij==uni_dist[k])
       last_ind=samedist_ind[length(samedist_ind)]
       rollingsum = rollingsum + sum(popsize[rollingsum_ind:last_ind]) # the minimum sum up to this distance
@@ -853,9 +853,26 @@ mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
     #NB there will be some negative cells
     #browser()
     S[i, ] = S.ij[order(destcells)] # reorder into correct order
-    
+
     i=i+1
   }
-  
+
   return( S )
 }
+
+distancewithinarectangle <- function(side1, side2){
+  # the average distance between two points uniformly distributed in the rectange
+  # with sides a, b with a>=b
+  # http://www.math.uni-muenster.de/reine/u/burgstal/d18.pdf and Santalo, LA Integral
+  # geometry and geometric probability pg 49 (book)
+  if (side1>=side2){
+    a=side1
+    b=side2
+  } else {
+    a=side2
+    b=side1
+  }
+  d=sqrt(a^2 + b^2)
+  dist=(1/15)*(a^3/b^2 + b^3/a^2 + d*(3 - a^2/b^2 - b^2/a^2) + (5/2)*((b^2/a)*log((a+d)/b) + (a^2/b)*log((b+d)/a)))
+}
+
