@@ -820,6 +820,7 @@ mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
 
   S = matrix( 0, nrow=D*A, ncol=D*A)
   i=1
+  pb <- txtProgressBar(min=0,max=D*A,style=3)
   while (i <= (D*A)) {
     #print(i)
     ai=i%%A; ai[ai==0]=A
@@ -855,6 +856,9 @@ mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
     S[i, ] = S.ij[order(destcells)] # reorder into correct order
 
     i=i+1
+
+    settTxtProgressBar(i)
+
   }
 
   return( S )
@@ -875,4 +879,3 @@ distancewithinarectangle <- function(side1, side2){
   d=sqrt(a^2 + b^2)
   dist=(1/15)*(a^3/b^2 + b^3/a^2 + d*(3 - a^2/b^2 - b^2/a^2) + (5/2)*((b^2/a)*log((a+d)/b) + (a^2/b)*log((b+d)/a)))
 }
-
