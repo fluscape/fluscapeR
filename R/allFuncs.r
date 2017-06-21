@@ -214,6 +214,7 @@ fit.mobility.model <- function(contacts,
         ## edits are needed here. not sure why
         ## this is returning an error
         cioffset <- 1.96
+        # consider browser here?
         for (ip in 1:nops) {
           val_lb <- fCIs(psLB[ip],ip,maxlike,offset=cioffset)
           val_ub <- fCIs(psUB[ip],ip,maxlike,offset=cioffset)
@@ -545,7 +546,7 @@ harriet.offset.radiation <- function(
 
   lnlike <- gravy.calc.lnlike.nowithinregion.harriet( obs.tab, radmodel, noorig , originindices, destindices)
 
-  print("Finished.")
+  # print("Finished.")
 
   return( lnlike )
 
@@ -857,7 +858,7 @@ mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
 
     i=i+1
 
-    settTxtProgressBar(i)
+    setTxtProgressBar(pb,i)
 
   }
 
