@@ -875,4 +875,3 @@ distancewithinarectangle <- function(side1, side2){
   d=sqrt(a^2 + b^2)
   dist=(1/15)*(a^3/b^2 + b^3/a^2 + d*(3 - a^2/b^2 - b^2/a^2) + (5/2)*((b^2/a)*log((a+d)/b) + (a^2/b)*log((b+d)/a)))
 }
-
