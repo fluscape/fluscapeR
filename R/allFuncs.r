@@ -552,52 +552,6 @@ harriet.offset.radiation <- function(
 
 }
 
-gravy.radiation.model.offset.harriet <- function(
-  x2, S, noorig, nodest, originindices, destindices,
-  distances, all_originindices, Offset ) {
-  # the offset radiation model allows within region mixing, by redefining the S matrix to be offset
-
-  # offset S matrix
-  offset.S=matrix(0, dim(S)[1], dim(S)[2])
-  radmodel <- matrix(0, nrow=noorig, ncol=nodest)
-  dscell   <- destindices$cell
-  n_d   <- x2[dscell] 	# density at destination cell
-  for (i in 1:noorig) {
-
-    orcell   <- originindices$cell[i]
-
-    n_o   <- x2[orcell] 	# density at origin cell
-
-    # match i to correct row in S
-    S_index = which(all_originindices[,2]==orcell)
-    offset.S[S_index, ] = S[S_index, ]
-
-    #redefine S matrix
-    index_in_Offset = which(distances[i, ] <= Offset)
-    regions_in_Offset = destindices$cells[index_in_Offset] # indicates which regions are within the offset
-    offset.S[S_index, index_in_Offset]=sum(x2[regions_in_Offset]) - n_o # all S entries less than Offset away from i are set to a maximum
-
-    S_ij = offset.S[S_index, ]
-
-    # None of the dimensions below here match
-    radmodel[i, ] <- (n_o * n_d) / ( (n_d + S_ij)*(n_d + n_o + S_ij) )
-
-    # consider only between region, set r to zero within region
-    ind = dscell == orcell # gives indicator when same
-    radmodel[i, ind] = 0
-
-    if (min(radmodel[i,])<0) {
-      # stop("model prediction < 0 in gravy.radiation.model function")
-      # browser()
-    }
-  }
-  # normalise probabilities
-  for (i in 1:noorig) {
-    radmodel[i, ] <- radmodel[i, ] / sum(radmodel[i, ])
-  }
-  return( radmodel )
-}
-
 gravy.subset.contact.data <- function(
   pid, contacts, x2
 ) {
@@ -850,6 +804,7 @@ mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
       rollingsum = rollingsum + sum(popsize[rollingsum_ind:last_ind]) # the minimum sum up to this distance
       rollingsum_ind = last_ind + 1
       S.ij[samedist_ind] = rollingsum
+
     }
     S.ij = S.ij - n_orig - popsize # remove the origin and destination cell
     #NB there will be some negative cells
@@ -863,6 +818,52 @@ mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
   }
 
   return( S )
+}
+
+gravy.radiation.model.offset.harriet <- function(
+  x2, S, noorig, nodest, originindices, destindices,
+  distances, all_originindices, Offset ) {
+  # the offset radiation model allows within region mixing, by redefining the S matrix to be offset
+
+  # offset S matrix
+  offset.S=matrix(0, dim(S)[1], dim(S)[2])
+  radmodel <- matrix(0, nrow=noorig, ncol=nodest)
+  dscell   <- destindices$cell
+  n_d   <- x2[dscell] 	# density at destination cell
+  for (i in 1:noorig) {
+
+    orcell   <- originindices$cell[i]
+
+    n_o   <- x2[orcell] 	# density at origin cell
+
+    # match i to correct row in S
+    S_index = which(all_originindices[,2]==orcell)
+    offset.S[S_index, ] = S[S_index, ]
+
+    #redefine S matrix
+    index_in_Offset = which(distances[i, ] <= Offset)
+    regions_in_Offset = destindices$cells[index_in_Offset] # indicates which regions are within the offset
+    offset.S[S_index, index_in_Offset]=sum(x2[regions_in_Offset]) - n_o # all S entries less than Offset away from i are set to a maximum
+
+    S_ij = offset.S[S_index, ]
+
+    # None of the dimensions below here match
+    radmodel[i, ] <- (n_o * n_d) / ( (n_d + S_ij)*(n_d + n_o + S_ij) )
+
+    # consider only between region, set r to zero within region
+    ind = dscell == orcell # gives indicator when same
+    radmodel[i, ind] = 0
+
+    if (min(radmodel[i,])<0) {
+      # stop("model prediction < 0 in gravy.radiation.model function")
+      # browser()
+    }
+  }
+  # normalise probabilities
+  for (i in 1:noorig) {
+    radmodel[i, ] <- radmodel[i, ] / sum(radmodel[i, ])
+  }
+  return( radmodel )
 }
 
 distancewithinarectangle <- function(side1, side2){
