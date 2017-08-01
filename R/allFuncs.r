@@ -1,9 +1,9 @@
 ## Copyright Steven Riley (sr@stevenriley.net), Harriet L. Mills and
-### Jonathan Read.
-### xx xx
-## This file is part of the library idd.
+## Jonathan Read.
 ##
-## idd is free software: you can redistribute it and/or modify
+## This file is part of the library fluscapeR.
+##
+## fluscapeR is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
@@ -479,8 +479,10 @@ mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
   #  S -- matrix of S_ij, where rows correspond
   # to originindices, and columns to destinations.
 
+  require("raster")  
+    
   # within region mixing
-  r_forfirstcell=values(distanceFromPoints(popmatrix, xyFromCell(popmatrix,1)))
+  r_forfirstcell=raster::values(raster::distanceFromPoints(popmatrix, xyFromCell(popmatrix,1)))
 
   # distance between first and second
   xlength=r_forfirstcell[2]
@@ -498,7 +500,7 @@ mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
 
     n_orig = popsize_vector[i] # density in cell i
 
-    d.ij=values(distanceFromPoints(popmatrix, xyFromCell(popmatrix,di)))
+    d.ij=raster::values(raster::distanceFromPoints(popmatrix, xyFromCell(popmatrix,di)))
     d.ij[di]=dwr_r #distance within that district
     popsize=popsize_vector
     destcells = 1:(D*A) #list of destination cells
@@ -618,23 +620,34 @@ gravy.gen.origin.index <- function( x2, contacts_small ) {
 }
 
 gravy.gen.observations <- function(
-  x2, contacts_small,originindices, destindices,noorig, nodest ) {
+                                   x2,
+                                   contacts_small,
+                                   originindices,
+                                   destindices,
+                                   noorig,
+                                   nodest) {
 
-  # make a matrix containing the observed counts of contact occuring
-  # in destination cell by participants coming from origin cell
-  contactindices = cellFromXY( x2, contacts_small[,c("long","lat")] )
-  hhindices = cellFromXY( x2, contacts_small[,c("HH_Long","HH_Lat")] )
-  obs.tab = matrix( 0, nrow=noorig, ncol=nodest  )
-  for (k in 1:noorig) {
-    j = originindices$cell[k]
-    i = contactindices[hhindices==j]
-    i = i[!is.na(i)]
-    z = table(i)
-    # XXXX error here humm
-    i.indices = match(as.numeric(names(z)),destindices$cells)
-    obs.tab[k,i.indices] = as.numeric(z)
-  }
-  return( obs.tab )
+    ## Declare required libraries
+    require(raster)
+
+    ## make a matrix containing the observed counts of contact occuring
+    ## in destination cell by participants coming from origin cell
+    contactindices = cellFromXY( x2, contacts_small[,c("long","lat")] )
+    hhindices = cellFromXY( x2, contacts_small[,c("HH_Long","HH_Lat")] )
+
+    obs.tab = matrix( 0, nrow=noorig, ncol=nodest  )
+
+    for (k in 1:noorig) {
+        j = originindices$cell[k]
+        i = contactindices[hhindices==j]
+        i = i[!is.na(i)]
+        z = table(i)
+        i.indices = match(as.numeric(names(z)),destindices$cells)
+        obs.tab[k,i.indices] = as.numeric(z)
+    }
+    
+    return(obs.tab)
+
 }
 
 gravy.gen.dist.matrix <- function( x2, originindices, destindices ) {
@@ -725,11 +738,11 @@ harriet.gravy.gravity.poppower.model.vcorrect.nowithinregion <- function( Power,
 
 gravy.calc.lnlike.nowithinregion.harriet <- function( dataMatrix, model, noorig , originindices, destindices) {
   # Inputs:
-  #   dataMatrix (obs.tab) -  matrix of observed events in each dest cell, row=origin, col=destination cells.
-  # 	model - matrix of probabilities, with same dimensions as obs.tab.
-  # 	noorig -  number of origin cells.
+  #   dataMatrix (obs.tab)   matrix of observed events in each dest cell, row=origin, col=destination cells.
+  # 	model - matrix of probabilities, with same dimensions as obs.tab.
+  # 	noorig -  number of origin cells.
   # Outputs:
-  # 	lnlike - log-likelihood value
+  # 	lnlike  log-likelihood value
 
   lnlike = 0
   dscell   <- destindices$cell
@@ -764,7 +777,7 @@ mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
   # to originindices, and columns to destinations.
 
   # within region mixing
-  r_forfirstcell=values(distanceFromPoints(popmatrix, xyFromCell(popmatrix,1)))
+  r_forfirstcell=raster::values(distanceFromPoints(popmatrix, xyFromCell(popmatrix,1)))
 
   # distance between first and second
   xlength=r_forfirstcell[2]
@@ -783,7 +796,7 @@ mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
 
     n_orig = popsize_vector[i] # density in cell i
 
-    d.ij=values(distanceFromPoints(popmatrix, xyFromCell(popmatrix,di)))
+    d.ij=values(raster::distanceFromPoints(popmatrix, xyFromCell(popmatrix,di)))
     d.ij[di]=dwr_r #distance within that district
     popsize=popsize_vector
     destcells = 1:(D*A) #list of destination cells
