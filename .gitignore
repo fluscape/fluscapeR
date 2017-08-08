@@ -32,3 +32,10 @@ vignettes/*.pdf
 *.utf8.md
 *.knit.md
 .Rproj.user
+
+# SR additions
+\#*#
+.Rbuildignore
+.Rhistory
+.DS_Store
+.Rapp.history
