@@ -67,31 +67,26 @@ fit.mobility.model <- function(contacts,
         contacts_type$pid, contacts_type, popgrid
     )
 
-    ## Origin indices calulation
+    ## Origin and destination indices calulation
     ## all_originindices <- gravy.gen.origin.index(popgrid, contacts_small)
     originx <- contacts_small$HH_Long
     originy <- contacts_small$HH_Lat
     destindices <- gravy.gen.dest.index(popgrid)
-
-    ## Origin indices calulation
     originindices <- gravy.gen.origin.index(popgrid, contacts_small)
     all_originindices <- gravy.gen.origin.index(popgrid, contacts)
 
     ## Find the number of origin and destination cells
-    noorig 		<- dim(originindices)[1]
-    nodest 		<- dim(destindices)[1]
+    noorig <- dim(originindices)[1]
+    nodest <- dim(destindices)[1]
 
     ## Generate a table of the observations
-    ## Up to here XXXX the version with the anonymous data doesn't work here
-    ## The anonymized data has some NAs that break this line
-    ## Most likely is NAs in contact small
     obs.tab <- gravy.gen.observations(
         popgrid, contacts_small, originindices, destindices, noorig, nodest
     )
 
-    ## This line can take a while
-    ## Distances calculation
-    distances <- gravy.gen.dist.matrix(popgrid, originindices, destindices )
+    ## Calculation of distances could be cached
+    ## But only a small proportion of typical run time
+    distances <- gravy.gen.dist.matrix(popgrid, originindices, destindices)
 
     ## This seems to give the same results as the main table in the paper
     nops <- length(psToFit)
@@ -107,9 +102,9 @@ fit.mobility.model <- function(contacts,
 
     ## browser("Triage parameter set")
 
-    ## Run the radiation model with no repeats
+    ## Run the radiation model with no repeats if no optimization
+    ## function is specified
     if (nops < 1 && is.null(optfun)) {
-
         radiation.model = harriet.offset.radiation(
             popgrid, Smat, noorig, nodest, originindices, destindices,
             distances, obs.tab, all_originindices, Offset=0
@@ -117,8 +112,13 @@ fit.mobility.model <- function(contacts,
         pvTab[] <- radiation.model
         lnlike <- radiation.model
 
+        ## If not pure ratiation, check to see if just likelihood needed for
+        ## other model
     } else if (justLike) {
 
+        ## Calculate just likelihood for the provided model
+        ## output goes only into lnlike variable. Table ignored for these
+        ## run options
         lnlike <- optfun(
             pJustLike,
             psToFit=psToFit,
@@ -139,15 +139,16 @@ fit.mobility.model <- function(contacts,
             ## randomly chosen initial conditions
             psInitial = psLB + (psUB-psLB)*runif(length(psUB))
 
+            ## Test if more than one parameter to choose optimization routine
             if (nops > 1) {
 
+                ## Run multidimensional optimization
                 fit_gravity <- optimx(
                     psInitial,
                     optfun,
                     method="L-BFGS-B",
                     lower=psLB,
                     upper=psUB,
-                    itnmax=999999999,
                     control=list(
                         trace=0,
                         fnscale=-1,
@@ -165,6 +166,7 @@ fit.mobility.model <- function(contacts,
                     S=Smat
                 )
 
+                ## Extract output for table
                 pests <- as.numeric(fit_gravity[1,1:nops])
                 maxlike <-  as.numeric(fit_gravity[1,"value"])
                 pvTab[i,1:nops] <- psInitial[]
@@ -173,6 +175,9 @@ fit.mobility.model <- function(contacts,
 
             } else {
 
+                ## Run one dimensional optimisation
+                ## Could get rid of this or wrap with optimx
+                ## but this seems pretty straightforward
                 fit_gravity <- optimise(
                     optfun,
                     maximum = TRUE,
@@ -190,6 +195,7 @@ fit.mobility.model <- function(contacts,
                     upper=psUB
                 )
 
+                ## Extract required variables from output
                 pests <- as.numeric(fit_gravity$maximum)
                 maxlike <-  as.numeric(fit_gravity$objective)
                 pvTab[i,1] <- psInitial[]
@@ -201,8 +207,7 @@ fit.mobility.model <- function(contacts,
             if (!justLike) {
 
                 ## Add the univariate confidence bounds
-                ## Test this helper function
-                ## fCIs(pests[1],1,maxlike)
+                ## Defined to be enclosed in this function
                 fCIs <- function(v,pind,maxl,offset=1.96) {
                     ps <- pests
                     ps[pind] <- v
@@ -219,39 +224,48 @@ fit.mobility.model <- function(contacts,
                         x2=popgrid,
                         S=Smat
                     )
-                    rtn <- (val[1]-maxl)+offset
+
+                    ## The value needs to be +offset if the value is equal to max like
+                    ## It needs to be 0 if the value is offset below max like and it
+                    ## needs to be below zero if the value is more than offset below
+                    ## max like. Remembering that val is a log likelihood.
+                    ## browser()
+                    rtn <- maxl - val + offset
                     rtn
                 }
 
-                ## Need call to uniroot for each parameter for
-                ## upper bounds and lower bounds
-                ## edits are needed here. not sure why
-                ## this is returning an error
+                ## Find univariate confidence bounds
+                ## Test for optimization bounds being inside CIs to
+                ## avoid an error in root finding
                 cioffset <- 1.96
-                                        # consider browser here?
                 for (ip in 1:nops) {
                     val_lb <- fCIs(psLB[ip],ip,maxlike,offset=cioffset)
                     val_ub <- fCIs(psUB[ip],ip,maxlike,offset=cioffset)
-                    if (abs(val_lb) > cioffset) {
+                    debug <- fCIs(pests[ip],ip,maxlike,offset=cioffset)
+                    if (val_lb < -0.00001) {
+                        ## browser()
                         lb <- uniroot(
-                            fCIs,interval=c(psLB[ip],pests[ip]),
-                            pind=ip,maxl=maxlike,tol=pests[ip]/10000.0,offset=cioffset)
+                            fCIs,
+                            interval=c(psLB[ip],pests[ip]),
+                            pind=ip,maxl=maxlike,tol=pests[ip]/10000.0,
+                            offset=cioffset)
                         pvTab[i,(2*nops+ip)] <- lb$root
                     } else {
                         pvTab[i,(2*nops+ip)] <- psLB[ip]
                     }
-                    if (abs(val_ub) > cioffset) {
+                    if (val_ub < -0.00001) {
+                        ## browser()
                         ub <- uniroot(
                             fCIs,interval=c(pests[ip],psUB[ip]),
-                            pind=ip,maxl=maxlike,tol=pests[ip]/10000.0,offset=cioffset)
+                            pind=ip,maxl=maxlike,tol=pests[ip]/10000.0,
+                            offset=cioffset)
                         pvTab[i,(3*nops+ip)] <- ub$root
                     } else {
                         pvTab[i,(3*nops+ip)] <- psUB[ip]
                     }
+                    ## browser()
                 }
-
             }
-
 
             ## Close loop for number of repeats
         }
@@ -318,7 +332,6 @@ fit.gravity.optim.nowithinregion <- function(
     }
 
   }
-  #browser()
   #find the lnlikelihood
   lnlike = harriet.gravity.nowithinregion(
     originindices,
@@ -546,7 +559,6 @@ mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
     }
     S.ij = S.ij - n_orig - popsize # remove the origin and destination cell
     #NB there will be some negative cells
-    #browser()
     S[i, ] = S.ij[order(destcells)] # reorder into correct order
 
     i=i+1
@@ -563,8 +575,6 @@ harriet.offset.radiation <- function(
 
   # Outputs:
   #	rad.res -- data.frame, power|offset|loglikelihood.
-
-  # browser()
 
   radmodel <- gravy.radiation.model.offset.harriet ( x2, S, noorig, nodest, originindices, destindices, distances, all_originindices, Offset )
 
@@ -694,7 +704,6 @@ harriet.gravity.nowithinregion <- function( originindices, destindices, distance
   # Outputs:
   #	grav.res -- just the value of the loglikelihood is returned.
 
-  #browser()
   gravmod <- harriet.gravy.gravity.model.vcorrect.nowithinregion( Power, OffsetAB, originindices, destindices, distances, noorig, nodest, poprast )
 
   lnlike = gravy.calc.lnlike.nowithinregion.harriet( obs.tab, gravmod, noorig , originindices, destindices )
@@ -782,7 +791,6 @@ gravy.calc.lnlike.nowithinregion.harriet <- function( dataMatrix, model, noorig 
 
     if (min(model[i, ind]) < 0) {
       #stop("Problem in gravy.calc.lnlike function: min(model[i,])<0" )
-      # browser()
     }
 
     lnlike <- lnlike + dmultinom( dataMatrix[i, ind], prob=model[i, ind], log=TRUE )
@@ -849,7 +857,6 @@ mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
     }
     S.ij = S.ij - n_orig - popsize # remove the origin and destination cell
     #NB there will be some negative cells
-    #browser()
     S[i, ] = S.ij[order(destcells)] # reorder into correct order
 
     i=i+1
@@ -897,7 +904,6 @@ gravy.radiation.model.offset.harriet <- function(
 
     if (min(radmodel[i,])<0) {
       # stop("model prediction < 0 in gravy.radiation.model function")
-      # browser()
     }
   }
   # normalise probabilities
