@@ -15,7 +15,7 @@
 ##
 ## You should have received a copy of the GNU General Public License
 ## along with this idsource.  If not, see <http://www.gnu.org/licenses/>.
-# (at your option) any later version.
+## (at your option) any later version.
 
 #' @import raster
 fit.mobility.model <- function(contacts,
@@ -32,7 +32,7 @@ fit.mobility.model <- function(contacts,
                                justLike = FALSE,
                                pJustLike = NULL,
                                lognote="") {
-
+    
     ## Check some preconditions for the function arguments
     if (is.null(optfun) && is.null(Smat)) {
         error("S matrix must be specified for the radiation model")
@@ -89,6 +89,9 @@ fit.mobility.model <- function(contacts,
     distances <- gravy.gen.dist.matrix(popgrid, originindices, destindices)
 
     ## This seems to give the same results as the main table in the paper
+    ## make this table be for all possible parameters and add the see and data subtype
+    ## Then append the table to the existing data
+    ## Consider a switch to mcmc for this if the cis are still wrong
     nops <- length(psToFit)
     pvTab <- matrix(nrow=noRepeats,ncol=4*nops+1)
     colnames(pvTab) <- c(paste(
@@ -99,6 +102,9 @@ fit.mobility.model <- function(contacts,
         rep("_ub",nops)),
         sep=""),"lnlike")
     lnlike <- -999999999
+      
+    ## INsert an alternative table here, check that it works and then 
+    ## delete the other table only when done
 
     ## browser("Triage parameter set")
 
@@ -116,8 +122,8 @@ fit.mobility.model <- function(contacts,
         ## other model
     } else if (justLike) {
 
-        ## Calculate just likelihood for the provided model
-        ## output goes only into lnlike variable. Table ignored for these
+    ## Calculate just likelihood for the provided model
+    ## output goes only into lnlike variable. Table ignored for these
         ## run options
         lnlike <- optfun(
             pJustLike,
@@ -167,6 +173,7 @@ fit.mobility.model <- function(contacts,
                 )
 
                 ## Extract output for table
+              ## This can be changed for the alternativ table
                 pests <- as.numeric(fit_gravity[1,1:nops])
                 maxlike <-  as.numeric(fit_gravity[1,"value"])
                 pvTab[i,1:nops] <- psInitial[]
@@ -176,14 +183,12 @@ fit.mobility.model <- function(contacts,
             } else {
 
                 ## Run one dimensional optimisation
-                ## Could get rid of this or wrap with optimx
-                ## but this seems pretty straightforward
                 fit_gravity <- optimise(
                     optfun,
                     maximum = TRUE,
-                    psToFit=psToFit,
-                    originindices=originindices,
-                    all_originindices=all_originindices,
+                    psToFit = psToFit,
+                    originindices = originindices,
+                    all_originindices = all_originindices,
                     destindices=destindices,
                     distances=distances,
                     noorig=noorig,
@@ -201,7 +206,6 @@ fit.mobility.model <- function(contacts,
                 pvTab[i,1] <- psInitial[]
                 pvTab[i,2] <- pests
                 pvTab[i,5] <- maxlike
-
             }
 
             if (!justLike) {
@@ -229,21 +233,19 @@ fit.mobility.model <- function(contacts,
                     ## It needs to be 0 if the value is offset below max like and it
                     ## needs to be below zero if the value is more than offset below
                     ## max like. Remembering that val is a log likelihood.
-                    ## browser()
-                    rtn <- maxl - val + offset
+                    rtn <- maxl - val - offset
                     rtn
                 }
 
                 ## Find univariate confidence bounds
                 ## Test for optimization bounds being inside CIs to
-                ## avoid an error in root finding
+                ## Skecth this out in notebook to be sure it makes sense
                 cioffset <- 1.96
                 for (ip in 1:nops) {
                     val_lb <- fCIs(psLB[ip],ip,maxlike,offset=cioffset)
                     val_ub <- fCIs(psUB[ip],ip,maxlike,offset=cioffset)
                     debug <- fCIs(pests[ip],ip,maxlike,offset=cioffset)
-                    if (val_lb < -0.00001) {
-                        ## browser()
+                    if (val_lb > -0.0000001) {
                         lb <- uniroot(
                             fCIs,
                             interval=c(psLB[ip],pests[ip]),
@@ -253,8 +255,7 @@ fit.mobility.model <- function(contacts,
                     } else {
                         pvTab[i,(2*nops+ip)] <- psLB[ip]
                     }
-                    if (val_ub < -0.00001) {
-                        ## browser()
+                    if (val_ub > -0.0000001) {
                         ub <- uniroot(
                             fCIs,interval=c(pests[ip],psUB[ip]),
                             pind=ip,maxl=maxlike,tol=pests[ip]/10000.0,
@@ -263,7 +264,6 @@ fit.mobility.model <- function(contacts,
                     } else {
                         pvTab[i,(3*nops+ip)] <- psUB[ip]
                     }
-                    ## browser()
                 }
             }
 
@@ -275,7 +275,7 @@ fit.mobility.model <- function(contacts,
     if (!is.null(logfile)) {
         write(datasubset,file=logfile,append=TRUE)
         write(psToFit,file=logfile,append=TRUE)
-        write.table(pvTab,file=logfile,row.names=FALSE, col.names=FALSE, append=TRUE)
+        write.table(pvTab,file=logfile,row.names=FALSE, col.names=TRUE, append=TRUE)
         write(as.character(Sys.time()),file=logfile,append=TRUE)
         write(paste("Note: ",lognote,"\n"),file=logfile,append=TRUE)
         write("\n\n\n",file=logfile,append=TRUE)
