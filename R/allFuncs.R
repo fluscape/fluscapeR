@@ -23,17 +23,17 @@ fit.mobility.model <- function(contacts,
                                sd=928734924,
                                noRepeats = 1,
                                optfun = NULL,
-                               psToFit = c("Power","Offset"),
+                               psToFit = c("kernpower","offset"),
                                psLB = c(0.1,0.001),
                                psUB = c(6,100),
                                datasubset="ALL",
-                               logfile=NULL,
+                               logfile="./gravity_logfile.csv",
                                Smat = NULL,
-                               justLike = FALSE,
                                pJustLike = NULL,
-                               lognote="") {
+                               lognote="",
+                               fdebug=FALSE) {
 
-        
+
     ## Check some preconditions for the function arguments
     if (is.null(optfun) && is.null(Smat)) {
         error("S matrix must be specified for the radiation model")
@@ -44,10 +44,17 @@ fit.mobility.model <- function(contacts,
 
     ## Set he seed
     set.seed(sd)
-    
-    ## Check for the log file
-    if (!is.null(logfile)) {
-        if (!file.exists(logfile)) stop("If logfile specified, it must exist")
+
+    ## Check for the log file and make sure it has the correct headers
+    if (!file.exists(logfile)) stop("Logfile must exist")
+    testdf <- read.csv(logfile)
+    testnames <- names(testdf)
+    targetnames <- names(make.data.df())
+    if (!all(testnames == targetnames)) {
+        errormessage <- paste(
+            "logfile anmes are not consistent with current",
+            "version of the function")
+        stop(errormessage)
     }
 
     ## Select type of contact
@@ -95,50 +102,53 @@ fit.mobility.model <- function(contacts,
     ## Then append the table to the existing data
     ## Consider a switch to mcmc for this if the cis are still wrong
     nops <- length(psToFit)
-    pvTab <- matrix(nrow=noRepeats,ncol=4*nops+1)
-    colnames(pvTab) <- c(paste(
-        psToFit,
-        c(rep("_iv",nops),
-        rep("_pe",nops),
-        rep("_lb",nops),
-        rep("_ub",nops)),
-        sep=""),"lnlike")
+    ## pvTab <- matrix(nrow=noRepeats,ncol=4*nops+1)
+    ## colnames(pvTab) <- c(paste(
+    ##    psToFit,
+    ##    c(rep(".iv",nops),
+    ##    rep(".pe",nops),
+    ##    rep(".lb",nops),
+    ##    rep(".ub",nops)),
+    ##    sep=""),"lnlike")
+    pvTab <- make.data.df(nrow=noRepeats)
     lnlike <- -999999999
-      
-    ## INsert an alternative table here, check that it works and then 
-    ## delete the other table only when done
 
-    ## browser("Triage parameter set")
+    ## Insert an alternative table here, check that it works and then
+    ## delete the other table only when done
 
     ## Run the radiation model with no repeats if no optimization
     ## function is specified
     if (nops < 1 && is.null(optfun)) {
         radiation.model = harriet.offset.radiation(
             popgrid, Smat, noorig, nodest, originindices, destindices,
-            distances, obs.tab, all_originindices, Offset=0
+            distances, obs.tab, all_originindices, offset=0
         )
-        pvTab[] <- radiation.model
+        pvTab[,"lnlike"] <- rep(as.numeric(radiation.model),noRepeats)
         lnlike <- radiation.model
 
         ## If not pure ratiation, check to see if just likelihood needed for
         ## other model
     } else if (!is.null(pJustLike)) {
 
-    ## Calculate just likelihood for the provided model
-    ## output goes only into lnlike variable. Table ignored for these
+        ## Calculate just likelihood for the provided model
+        ## output goes only into lnlike variable. Table ignored for these
         ## run options
-        lnlike <- optfun(
-            pJustLike,
-            psToFit=psToFit,
-            originindices=originindices,
-            all_originindices=all_originindices,
-            destindices=destindices,
-            distances=distances,
-            noorig=noorig,
-            nodest=nodest,
-            obs.tab = obs.tab,
-            x2=popgrid,
-            S=Smat)
+        if (!fdebug) {
+            lnlike <- optfun(
+                pJustLike,
+                psToFit=psToFit,
+                originindices=originindices,
+                all_originindices=all_originindices,
+                destindices=destindices,
+                distances=distances,
+                noorig=noorig,
+                nodest=nodest,
+                obs.tab = obs.tab,
+                x2=popgrid,
+                S=Smat)
+        } else {
+            lnlike <- 0
+        }
 
     } else {
 
@@ -151,66 +161,108 @@ fit.mobility.model <- function(contacts,
             if (nops > 1) {
 
                 ## Run multidimensional optimization
-                fit_gravity <- optimx(
-                    psInitial,
-                    optfun,
-                    method="L-BFGS-B",
-                    lower=psLB,
-                    upper=psUB,
-                    control=list(
-                        trace=0,
-                        fnscale=-1,
-                        kkt=FALSE
-                    ),
-                    psToFit=psToFit,
-                    originindices=originindices,
-                    all_originindices=all_originindices,
-                    destindices=destindices,
-                    distances=distances,
-                    noorig=noorig,
-                    nodest=nodest,
-                    obs.tab = obs.tab,
-                    x2=popgrid,
-                    S=Smat
-                )
+                if (fdebug) {
 
-                ## Extract output for table
-                ## This can be changed for the alternative table
-                pests <- as.numeric(fit_gravity[1,1:nops])
-                maxlike <-  as.numeric(fit_gravity[1,"value"])
-                pvTab[i,1:nops] <- psInitial[]
-                pvTab[i,(nops+1):(2*nops)] <- pests
-                pvTab[i,4*nops+1] <- maxlike
+                    pests <- -psInitial[]
+                    maxlike <-  0
+
+                } else {
+
+                    fit_gravity <- optimx(
+                        psInitial,
+                        optfun,
+                        method="L-BFGS-B",
+                        lower=psLB,
+                        upper=psUB,
+                        control=list(
+                            trace=0,
+                            fnscale=-1,
+                            kkt=FALSE
+                        ),
+                        psToFit=psToFit,
+                        originindices=originindices,
+                        all_originindices=all_originindices,
+                        destindices=destindices,
+                        distances=distances,
+                        noorig=noorig,
+                        nodest=nodest,
+                        obs.tab = obs.tab,
+                        x2=popgrid,
+                        S=Smat
+                    )
+
+                    ## Extract output for table
+                    ## This can be changed for the alternative table
+                    pests <- as.numeric(fit_gravity[1,1:nops])
+                    maxlike <-  as.numeric(fit_gravity[1,"value"])
+
+                }
+
+                ## Need to use parameter names here to assign values, not
+                ## based just on the location in the old pvTab
+                ## There are about three other places I need to do this as well
+
+                ## Below here maybe should be a function, but it seems like a waste to
+                ## have it evaluated so often.
+                pvTab[i,"lnlike"] <- maxlike
+                for (j in 1:nops) {
+                    colinit <- paste(psToFit[j],".iv",sep="")
+                    colpe <- paste(psToFit[j],".pe",sep="")
+                    pvTab[i,colinit] <- psInitial[j]
+                    pvTab[i,colpe] <- pests[j]
+                }
+
+                ## pvTab[i,1:nops] <- psInitial[]
+                ## pvTab[i,(nops+1):(2*nops)] <- pests
+                ## pvTab[i,4*nops+1] <- maxlike
 
             } else {
 
-                ## Run one dimensional optimisation
-                fit_gravity <- optimise(
-                    optfun,
-                    maximum = TRUE,
-                    psToFit = psToFit,
-                    originindices = originindices,
-                    all_originindices = all_originindices,
-                    destindices=destindices,
-                    distances=distances,
-                    noorig=noorig,
-                    nodest=nodest,
-                    obs.tab = obs.tab,
-                    x2=popgrid,
-                    S=Smat,
-                    lower=psLB,
-                    upper=psUB
-                )
+                if (fdebug) {
 
-                ## Extract required variables from output
-                pests <- as.numeric(fit_gravity$maximum)
-                maxlike <-  as.numeric(fit_gravity$objective)
-                pvTab[i,1] <- psInitial[]
-                pvTab[i,2] <- pests
-                pvTab[i,5] <- maxlike
+                    ## Extract required variables from output
+                    pests <- -psInitial[]
+                    maxlike <-  0
+
+                } else {
+
+                    ## Run one dimensional optimisation
+                    fit_gravity <- optimise(
+                        optfun,
+                        maximum = TRUE,
+                        psToFit = psToFit,
+                        originindices = originindices,
+                        all_originindices = all_originindices,
+                        destindices=destindices,
+                        distances=distances,
+                        noorig=noorig,
+                        nodest=nodest,
+                        obs.tab = obs.tab,
+                        x2=popgrid,
+                        S=Smat,
+                        lower=psLB,
+                        upper=psUB
+                    )
+
+                    ## Extract required variables from output
+                    pests <- as.numeric(fit_gravity$maximum)
+                    maxlike <-  as.numeric(fit_gravity$objective)
+
+                }
+
+                ## Below here maybe should be a function, but it seems like a waste to
+                ## have it evaluated so often.
+                pvTab[i,"lnlike"] <- maxlike
+                for (j in 1:nops) {
+                    colinit <- paste(psToFit[j],".iv",sep="")
+                    colpe <- paste(psToFit[j],".pe",sep="")
+                    pvTab[i,colinit] <- psInitial[j]
+                    pvTab[i,colpe] <- pests[j]
+                }
+
             }
 
-            if (is.null(pJustLike)) {
+            if (is.null(pJustLike) & !fdebug) {
 
                 ## Add the univariate confidence bounds
                 ## Defined to be enclosed in this function
@@ -238,7 +290,7 @@ fit.mobility.model <- function(contacts,
                     ## that val is a log likelihood.
                     rtn <- maxl - val - offset
                     rtn
-                    
+
                 }
 
                 ## Find univariate confidence bounds
@@ -246,25 +298,27 @@ fit.mobility.model <- function(contacts,
                 ## Skecth this out in notebook to be sure it makes sense
                 cioffset <- 1.96
                 for (ip in 1:nops) {
+                    colnamelb <- paste(psToFit[ip],".lb",sep="")
+                    colnameub <- paste(psToFit[ip],".ub",sep="")
                     val_lb <- fCIs(psLB[ip],ip,maxlike,offset=cioffset)
                     val_ub <- fCIs(psUB[ip],ip,maxlike,offset=cioffset)
-                    debug <- fCIs(pests[ip],ip,maxlike,offset=cioffset)
+                    ## debug <- fCIs(pests[ip],ip,maxlike,offset=cioffset)
                     if (val_lb > -0.0000001) {
                         lb <- uniroot(
                             fCIs,
                             interval=c(psLB[ip],pests[ip]),
                             pind=ip,maxl=maxlike, offset=cioffset)
-                        pvTab[i,(2*nops+ip)] <- lb$root
+                        pvTab[i,colnamelb] <- lb$root
                     } else {
-                        pvTab[i,(2*nops+ip)] <- psLB[ip]
+                        pvTab[i,colnamelb] <- psLB[ip]
                     }
                     if (val_ub > -0.0000001) {
                         ub <- uniroot(
                             fCIs,interval=c(pests[ip],psUB[ip]),
                             pind=ip,maxl=maxlike, offset=cioffset)
-                        pvTab[i,(3*nops+ip)] <- ub$root
+                        pvTab[i,colnameub] <- ub$root
                     } else {
-                        pvTab[i,(3*nops+ip)] <- psUB[ip]
+                        pvTab[i,colnameub] <- psUB[ip]
                     }
                 }
             }
@@ -275,13 +329,33 @@ fit.mobility.model <- function(contacts,
 
     ## Record to log file if needed
     if (!is.null(logfile)) {
-        write(datasubset,file=logfile,append=TRUE)
-        write(psToFit,file=logfile,append=TRUE)
-        write.table(pvTab,file=logfile,row.names=FALSE,
-                    col.names=TRUE, append=TRUE)
-        write(as.character(Sys.time()),file=logfile,append=TRUE)
-        write(paste("Note: ",lognote,"\n"),file=logfile,append=TRUE)
-        write("\n\n\n",file=logfile,append=TRUE)
+
+        ## If validation of column names needed
+        ## can be done at the head of this function
+        tmpinfo <- Sys.info()
+        pvTab[,"day.time"] <- rep(as.character(Sys.time()),noRepeats)
+        pvTab[,"node"] <- rep(as.character(tmpinfo["nodename"]),noRepeats)
+        pvTab[,"datasubset"] <- rep(as.character(datasubset),noRepeats)
+        pvTab[,"datatype"] <- rep(as.character(lognote),noRepeats)
+        write.table(pvTab,
+                    file=logfile,
+                    row.names=FALSE,
+                    col.names=FALSE,
+                    append=TRUE,
+                    sep=",")
+
+        ## tmpTab <- make.data.df(nrow=1)
+        ## tmpTab[1,"datasubset"] <- datasubset
+        ## tmpTab[1,"likelihood"] <- as.numeric(1)
+
+        ## write(datasubset,file=logfile,append=TRUE)
+        ## write(psToFit,file=logfile,append=TRUE)
+        ## write.table(pvTab,file=logfile,row.names=FALSE,
+        ##            col.names=TRUE, append=TRUE)
+        ## write(as.character(Sys.time()),file=logfile,append=TRUE)
+        ## write(paste("Note: ",lognote,"\n"),file=logfile,append=TRUE)
+        ## write("\n\n\n",file=logfile,append=TRUE)
+
     }
 
     ## Return function value
@@ -289,6 +363,19 @@ fit.mobility.model <- function(contacts,
 
 }
 
+make.data.df <- function(nrow=0) {
+    colnames <- c(
+        "node","day.time","datasubset","datatype","lnlike",
+        "destpower.pe","destpower.lb","destpower.ub","destpower.iv",
+        "kernpower.pe","kernpower.lb","kernpower.ub","kernpower.iv",
+        "offset.pe","offset.lb","offset.ub","offset.iv"
+    )
+    ncols <- length(colnames)
+    tmpmat <- matrix(nrow=nrow,ncol=ncols)
+    rtn <- as.data.frame(tmpmat)
+    names(rtn) <- colnames
+    rtn
+}
 
 fit.gravity.optim.nowithinregion <- function(
   fitpars,
@@ -315,23 +402,23 @@ fit.gravity.optim.nowithinregion <- function(
 
   #determine the parameters
   #power
-  Power=fitpars[which(psToFit=="Power")]
+  kernpower=fitpars[which(psToFit=="kernpower")]
 
   #offset
   if (gravitymodel == "Harriet"){ #correct model
 
-    if (length(which(psToFit=="Offset"))==0){ # gravity model
+    if (length(which(psToFit=="offset"))==0){ # gravity model
       OffsetAB=c(0, 1) # not fitting any offset
     } else { # offset gravity model
-      OffsetAB = c(1, fitpars[which(psToFit=="Offset")])
+      OffsetAB = c(1, fitpars[which(psToFit=="offset")])
     }
 
   } else{ #Jon's model
 
-    if (length(which(psToFit=="Offset"))==0){ # gravity model
+    if (length(which(psToFit=="offset"))==0){ # gravity model
       OffsetAB=c(1, 1) # not fitting any offset
     } else {
-      OffsetAB = c(fitpars[which(psToFit=="Offset")], 1)
+      OffsetAB = c(fitpars[which(psToFit=="offset")], 1)
     }
 
   }
@@ -344,11 +431,11 @@ fit.gravity.optim.nowithinregion <- function(
     nodest,
     obs.tab,
     x2,
-    Power = Power,
+    kernpower = kernpower,
     OffsetAB= OffsetAB)
 
-  cat(lnlike,Power,OffsetAB,"\n")
-    
+  cat(lnlike,kernpower,OffsetAB,"\n")
+
   return(lnlike)
 }
 
@@ -377,8 +464,8 @@ fit.gravity.poppower.optim.nowithinregion <- function(
 
     ## determine the parameters
     ## power
-    
-  Power=fitpars[which(psToFit=="Power")]
+
+  kernpower=fitpars[which(psToFit=="kernpower")]
 
   if (length(which(psToFit=="OriginPower"))==0){ # origin powers
     OriginPower = 1 # not fitting any origin power
@@ -386,39 +473,47 @@ fit.gravity.poppower.optim.nowithinregion <- function(
     OriginPower = fitpars[which(psToFit=="OriginPower")]
   }
 
-    if (length(which(psToFit=="DestPower"))==0){ # dest powers
-        DestPower = 1 # not fitting any dest power
+    if (length(which(psToFit=="destpower"))==0){ # dest powers
+        destpower = 1 # not fitting any dest power
   } else { # fit origin powers
-    DestPower = fitpars[which(psToFit=="DestPower")]
+    destpower = fitpars[which(psToFit=="destpower")]
   }
 
   #offset
   if (gravitymodel == "Harriet"){ #correct model
 
-    if (length(which(psToFit=="Offset"))==0){ # gravity model
+    if (length(which(psToFit=="offset"))==0){ # gravity model
       OffsetAB=c(0, 1) # not fitting any offset
     } else { # offset gravity model
-      OffsetAB = c(1, fitpars[which(psToFit=="Offset")])
+      OffsetAB = c(1, fitpars[which(psToFit=="offset")])
     }
 
   } else{ #Jon's model
 
-    if (length(which(psToFit=="Offset"))==0){ # gravity model
+    if (length(which(psToFit=="offset"))==0){ # gravity model
       OffsetAB=c(1, 1) # not fitting any offset
     } else {
-      OffsetAB = c(fitpars[which(psToFit=="Offset")], 1)
+      OffsetAB = c(fitpars[which(psToFit=="offset")], 1)
     }
 
   }
 
-  #find the lnlikelihood
-  lnlike = harriet.gravity.poppower.nowithinregion( originindices, destindices, distances, noorig, nodest, obs.tab, x2,
-                                                    Power = Power,
-                                                    OffsetAB= OffsetAB,
-                                                    OriginPower = OriginPower,
-                                                    DestPower = DestPower)
+                                        #find the lnlikelihood
 
-  cat(lnlike,"Power",Power,"Offset",OffsetAB,"Origin Power",OriginPower,"DestPower",DestPower,"\n")
+    lnlike = harriet.gravity.poppower.nowithinregion( originindices,
+                                                     destindices,
+                                                     distances,
+                                                     noorig,
+                                                     nodest,
+                                                     obs.tab,
+                                                     x2,
+                                                     kernpower = kernpower,
+                                                     OffsetAB= OffsetAB,
+                                                     OriginPower = OriginPower,
+                                                     destpower = destpower)
+
+    cat(lnlike,"kernpower",kernpower,"offset",OffsetAB,"Origin Power",
+        OriginPower,"destpower",destpower,"\n")
 
   return(lnlike)
 
@@ -447,9 +542,7 @@ fit.offset.radiation.optim <- function(
   # pid -- IDs of participants to use in this fit.
 
   #determine the parameter
-  Offset=fitpars[which(psToFit=="Offset")]
-
-  # browser("db438729")
+  offset=fitpars[which(psToFit=="offset")]
 
   #find the lnlikelihood
   lnlike = harriet.offset.radiation(x2,
@@ -461,17 +554,17 @@ fit.offset.radiation.optim <- function(
                                     distances,
                                     obs.tab,
                                     all_originindices,
-                                    Offset)
+                                    offset)
 
 
-  cat(lnlike," ",Offset," ",fitpars,"\n")
+  cat(lnlike," ",offset," ",fitpars,"\n")
 
   return(lnlike)
 }
 
 
 harriet.gravy.gravity.model.vcorrect.nowithinregion <- function(
-  Power, OffsetAB, originindices, destindices,
+  kernpower, OffsetAB, originindices, destindices,
   distances, noorig, nodest, poprast ) {
 
   # generate the probabilities for each destination cell, for each origin cell, based
@@ -490,7 +583,7 @@ harriet.gravy.gravity.model.vcorrect.nowithinregion <- function(
     orcell   <- originindices$cell[i]
     n_o 	<- extract(poprast, orcell)
     d_ij 	<- distances[i, ]/1000 # convert from metres to km
-    gravmodel[i, ] <- (n_o * n_d) / (OffsetA+(d_ij/OffsetB)^Power) #our version
+    gravmodel[i, ] <- (n_o * n_d) / (OffsetA+(d_ij/OffsetB)^kernpower) #our version
     # gravmodel[i, ] <- (n_o * n_d) / (OffsetA+d_ij/OffsetB)^Power #Truscott and Ferguson version
     # remove the within region mixing
     ind = dscell == orcell # gives indicator when same
@@ -517,8 +610,8 @@ mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
   #  S -- matrix of S_ij, where rows correspond
   # to originindices, and columns to destinations.
 
-  require("raster")  
-    
+  require("raster")
+
   # within region mixing
   r_forfirstcell=raster::values(raster::distanceFromPoints(popmatrix, xyFromCell(popmatrix,1)))
 
@@ -573,14 +666,14 @@ mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
 
 harriet.offset.radiation <- function(
   x2, S, noorig, nodest, originindices,
-  destindices, distances, obs.tab, all_originindices, Offset) {
+  destindices, distances, obs.tab, all_originindices, offset) {
 
   # Inputs:
 
   # Outputs:
   #	rad.res -- data.frame, power|offset|loglikelihood.
 
-  radmodel <- gravy.radiation.model.offset.harriet ( x2, S, noorig, nodest, originindices, destindices, distances, all_originindices, Offset )
+  radmodel <- gravy.radiation.model.offset.harriet ( x2, S, noorig, nodest, originindices, destindices, distances, all_originindices, offset )
 
   lnlike <- gravy.calc.lnlike.nowithinregion.harriet( obs.tab, radmodel, noorig , originindices, destindices)
 
@@ -681,7 +774,7 @@ gravy.gen.observations <- function(
         i.indices = match(as.numeric(names(z)),destindices$cells)
         obs.tab[k,i.indices] = as.numeric(z)
     }
-    
+
     return(obs.tab)
 
 }
@@ -704,10 +797,10 @@ harriet.gravity.nowithinregion <- function(
                                            nodest,
                                            obs.tab,
                                            poprast,
-                                           Power, # single value
+                                           kernpower, # single value
                                            OffsetAB #2 values
                                            ) {
-    
+
     ## finds gravity model with lowest loglikelihood,
     ## with base power and offset terms.
     ## Inputs:
@@ -717,9 +810,9 @@ harriet.gravity.nowithinregion <- function(
     ##	grav.res -- just the value of the loglikelihood is returned.
 
     gravmod <- harriet.gravy.gravity.model.vcorrect.nowithinregion(
-        Power, OffsetAB, originindices, destindices, distances,
+        kernpower, OffsetAB, originindices, destindices, distances,
         noorig, nodest, poprast )
-    
+
     lnlike = gravy.calc.lnlike.nowithinregion.harriet( obs.tab,
                                                       gravmod,
                                                       noorig ,
@@ -740,10 +833,10 @@ harriet.gravity.poppower.nowithinregion <- function(
                                                     nodest,
                                                     obs.tab,
                                                     poprast,
-                                                    Power, # single value
+                                                    kernpower, # single value
                                                     OffsetAB, #2 values
                                                     OriginPower,
-                                                    DestPower)
+                                                    destpower)
 {
     ## finds gravity model with lowest loglikelihood,
     ## with base power and offset terms.
@@ -756,10 +849,10 @@ harriet.gravity.poppower.nowithinregion <- function(
     ## Need to find out here why the likelihood is not changing
     ## So using the lines below in an interactive way
 
-    gravmod <- poppower_model(Power,
+    gravmod <- poppower_model(kernpower,
                               OffsetAB,
                               OriginPower,
-                              DestPower,
+                              destpower,
                               originindices,
                               destindices,
                               distances,
@@ -780,10 +873,10 @@ harriet.gravity.poppower.nowithinregion <- function(
 ## Move this around the code to whereever working
 version_check <- function() {cat("0.90001\n")}
 
-poppower_model <- function(Power,
+poppower_model <- function(kernpower,
                            OffsetAB,
                            OriginPower,
-                           DestPower,
+                           destpower,
                            originindices,
                            destindices,
                            distances,
@@ -796,6 +889,7 @@ poppower_model <- function(Power,
     ## NOTE, distances are expected to be in metres!
 
     ## now calculate model
+
     OffsetA = OffsetAB[1]
     OffsetB = 10^(OffsetAB[2])
 
@@ -814,28 +908,28 @@ poppower_model <- function(Power,
         ## our version
 
         gravmodel[i, ] <- ((n_o^OriginPower) *
-                           (n_d^DestPower)) /
-            (OffsetA+(d_ij/OffsetB)^Power)
+                           (n_d^destpower)) /
+            (OffsetA+(d_ij/OffsetB)^kernpower)
         ## Truscott and Ferguson version
         ## gravmodel[i, ] <- ((n_o^OriginPower) * (n_d^DestPower)) /
-        ## (OffsetA+d_ij/OffsetB)^Power 
-        
+        ## (OffsetA+d_ij/OffsetB)^Power
+
         ## Zero off within cell mixing
-        ind <- (dscell == orcell) 
-        gravmodel[i, ind] = 0        
+        ind <- (dscell == orcell)
+        gravmodel[i, ind] = 0
     }
 
     ## individual-level normalisation
     for (i in 1:noorig) {
         gravmodel[i,] <- gravmodel[i,] / sum(gravmodel[i,])
     }
-    
+
   return( gravmodel )
 
 }
 
 gravy.calc.lnlike.nowithinregion.harriet <- function( dataMatrix, model, noorig , originindices, destindices) {
-  # Inputs:
+    ## Inputs:
   #   dataMatrix (obs.tab)   matrix of observed events in each dest cell, row=origin, col=destination cells.
   # 	model - matrix of probabilities, with same dimensions as obs.tab.
   # 	noorig -  number of origin cells.
@@ -931,7 +1025,7 @@ mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
 
 gravy.radiation.model.offset.harriet <- function(
   x2, S, noorig, nodest, originindices, destindices,
-  distances, all_originindices, Offset ) {
+  distances, all_originindices, offset ) {
   # the offset radiation model allows within region mixing, by redefining the S matrix to be offset
 
   # offset S matrix
@@ -950,7 +1044,7 @@ gravy.radiation.model.offset.harriet <- function(
     offset.S[S_index, ] = S[S_index, ]
 
     #redefine S matrix
-    index_in_Offset = which(distances[i, ] <= Offset)
+    index_in_Offset = which(distances[i, ] <= offset)
     regions_in_Offset = destindices$cells[index_in_Offset] # indicates which regions are within the offset
     offset.S[S_index, index_in_Offset]=sum(x2[regions_in_Offset]) - n_o # all S entries less than Offset away from i are set to a maximum
 
@@ -987,5 +1081,7 @@ distancewithinarectangle <- function(side1, side2){
     b=side1
   }
   d=sqrt(a^2 + b^2)
-  dist=(1/15)*(a^3/b^2 + b^3/a^2 + d*(3 - a^2/b^2 - b^2/a^2) + (5/2)*((b^2/a)*log((a+d)/b) + (a^2/b)*log((b+d)/a)))
+    dist=(1/15)*(a^3/b^2 + b^3/a^2 + d*(3 - a^2/b^2 -
+                                        b^2/a^2) + (5/2)*((b^2/a)*log((a+d)/b) +
+                                                          (a^2/b)*log((b+d)/a)))
 }
