@@ -39,3 +39,5 @@ vignettes/*.pdf
 .Rhistory
 .DS_Store
 .Rapp.history
+*~
+.project
