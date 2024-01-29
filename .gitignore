@@ -41,3 +41,4 @@ vignettes/*.pdf
 .Rapp.history
 *~
 .project
+inst/doc
