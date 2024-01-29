@@ -12,6 +12,7 @@
 
 #' Clear memory, setup required libraries and set local data dir
 rm(list=ls(all=TRUE))
+
 library(devtools)
 library(raster)
 load_all()
@@ -70,6 +71,28 @@ contacts_V1_jittered_100m <- contacts_jit
 usethis::use_data(contacts_V1_jittered_100m, overwrite = TRUE)
 
 #' ## Make the S matrix
+library(raster)
+lat.lim2 <- as.vector(c(22.11667,24.50833))
+long.lim2 <- as.vector(c(112.2667,114.8000))
+margin <- 0
+ext <- extent(
+  long.lim2[1]-margin,long.lim2[2]+margin,lat.lim2[1]-margin,lat.lim2[2]+margin
+)
+gz_pop_raster <- crop(x1,ext)
 
-#' When I get the point that I need it, I'll make a small version of the S matrix here and then rerun 
-#' the code to make the larger version that will be stored on zenodo. 
+#' Check to see if this raster is consistent with the saved large S matrix
+#' XXXX up to here
+S_mat_2024 <- readRDS("~/dbox/shares/me_jr_hm_dc_gravity/current/to_upload")
+
+
+#' Firstly, we need to check that we can run this just for a small example. This test will also be
+#' repeated in one of the package vingettes.
+popsize_vector = values(popmatrix)
+D=ncell(popsize_vector)
+gz_pop_raster_agg <- aggregate(gz_pop_raster,popsize_vector,D,10)
+pop_S_mat_fluscape_agg <- mob_calc_S_mat(gz_pop_raster_agg)
+dim(pop_S_mat_fluscape_agg)
+
+#' Now I need to load up the pre-calculated object and compare it with the size of this then
+#' find the right size of matrix so I can check the radiation model runs
+pop_S_mat_fluscape <- readRDS( "~/dbox/projects/mobility/socio-spatial-behaviour/tmpdata/read_et_al_S_margin.rds")

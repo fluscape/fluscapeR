@@ -1,0 +1,26 @@
+---
+title: "mobility-analysis"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{mobility-analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+## library(fluscapeR)
+load_all()
+```
+
+Run a model likelihood with the radiation model. First need to load the population density, the S matrix and the set of contacts that compatible. Once I have a definite set of three that are, I need to make an object that captures the three of them and then work that through the rest of the code. Or I just need to add a validate function for the triples with lots of comments. That might be quicker and easier.
+
+```{r}
+dim(gz_pop_raster)
+```

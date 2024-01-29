@@ -598,7 +598,7 @@ harriet.gravy.gravity.model.vcorrect.nowithinregion <- function(
 }
 
 
-mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
+mob_calc_S_mat_first <- function(popmatrix, A=1) {
   # Faster function to calculate S_ij, the sum of population densities
   # within radius r_ij,
   # for each origin-destination pair.
@@ -611,6 +611,10 @@ mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
   # to originindices, and columns to destinations.
 
   require("raster")
+
+  ## Re engineer arguments
+  popsize_vector = values(popmatrix)
+  D=ncell(popsize_vector)
 
   # within region mixing
   r_forfirstcell=raster::values(raster::distanceFromPoints(popmatrix, xyFromCell(popmatrix,1)))
@@ -955,7 +959,7 @@ gravy.calc.lnlike.nowithinregion.harriet <- function( dataMatrix, model, noorig 
   return( lnlike )
 }
 
-mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
+mob_calc_S_mat <- function(popmatrix,popsize_vector,D,A=1) {
   # Faster function to calculate S_ij, the sum of population densities
   # within radius r_ij,
   # for each origin-destination pair.
@@ -1021,6 +1025,7 @@ mob_calc_S_mat <- function(popmatrix, popsize_vector, D, A) {
   }
 
   return( S )
+
 }
 
 gravy.radiation.model.offset.harriet <- function(
