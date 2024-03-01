@@ -13,7 +13,8 @@ Part of the analysis involves the creation and then use of a large binary object
 ## Tasks
 
 To do
-- [x] reconfirm the creation of the geospatial data we use for the study
+- [ ] reproduce a radiation model result using and existing S matrix binary at the end of the gen_data.R script
+- [ ] figure out how Jon's code works to make the S matrix and rerun a new calculation that is consistent with the S matrix
 - [ ] based on read_et_al_example.r write a vingette that could remake key numbers from the key table but would be very slow and messy
 - [ ] check key numbers using that vingette for jittered and ppii versions of the data 
 - [ ] put the code to actually reproduce the table into the project github, and remake the table
@@ -82,7 +83,6 @@ Still can't find the script that makes the full S matrix for fluscape, but the g
 
 Searching for "s_margin" found what could likely be the right call. Now just need to make sure I can run
 
-## 28 Jan 2023
+## 29 Jan 2023
 
-Jon sent some code that he thinks he ran to get this to work. Need to check on that. ALso moved this file to the fluscapeR package, rather than keeping it here.
-
+Jon sent some code that he thinks he ran to get this to work. Need to check on that. ALso moved this file here to the fluscapeR package, rather than leaving it the manuscripts directory in the main fluscape github.
