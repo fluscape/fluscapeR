@@ -257,8 +257,10 @@ for (i in 1:noorig) {
 	dist <- distances[i, ]
 	for (j in 1:nodest) {
 	  k = k + 1; setTxtProgressBar( pb, k )
+	  k = k + 1
 		radcell <- destindices$cell[ which(dist<=dist[j]) ] # all dest cells within radius dist
 		S[i,j] = sum( extract(x2,radcell) )
+		setTxtProgressBar( pb, k )
 	}
 }
 close(pb)
