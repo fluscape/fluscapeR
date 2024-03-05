@@ -15,17 +15,19 @@ rm(list=ls(all=TRUE))
 
 library(devtools)
 library(raster)
+library(readr)
+
+#' The script is designed to be run in with pwd set to the fluscapeR source directory
 load_all()
 
-#' Assumes that the soure package fluscapeR is next to main private fluscape repo
+#' Assumes that the soure package fluscapeR is next to main private fluscape repo in a local
+#' filesystem
 local_data_dir <- "~/tmp"
 fluscape_top_dir <- "../fluscape/"
 
-source("../fluscape/source/R/mob_utility_private.r")
-source("../fluscape/source/R/fluscape_copy_stevensRfunctions.R")
-source("../fluscape/source/R/GeneralUtility.r")
-
-#' ## Load the population density matrix
+source(paste0(fluscape_top_dir,"source/R/mob_utility_private.r"))
+source(paste0(fluscape_top_dir,"source/R/fluscape_copy_stevensRfunctions.R"))
+source(paste0(fluscape_top_dir,"source/R/GeneralUtility.r"))
 
 #' Load the snapshot of landscan saved into the fluscape directory
 x1 <- fsc.load.wide.raster(fluscapetopdir=fluscape_top_dir)
@@ -44,9 +46,15 @@ households <- load.household.data.V1(topdir = fluscape_top_dir)
 participants <- load.and.merge.part.V1(topdir = fluscape_top_dir)
 participants$pid = paste(participants$LOC_ID, participants$HH_ID, participants$PARTICIPANT_ID, sep="_")
 
-#' Set area boundary
-long.lim = c( 112.8, 114.2 )
-lat.lim = c( 22.6, 24.0 )
+#' These are old versions of the data
+part_all <- load_particpant_data_long()
+cont_all <- read.csv("../fluscape/data/clean_datasets/ContactsAll.csv")
+dim(part_all)
+names(part_all)
+
+#' Set area boundary. Not exatly sure where this comes from and is not currently used, so commented out for now
+## long.lim = c( 112.8, 114.2 )
+## lat.lim = c( 22.6, 24.0 )
 
 #' Keep old data line in just in case. Not run.
 ## contacts_0 <- mob_load_old_contact_data( locations, households, participants )
@@ -61,7 +69,7 @@ contacts_jit <- mob_generate_contacts_data_from_scratch(locations, households, p
                                                       topdir=fluscape_top_dir )
                                                       
 hist(contacts_fluscape_V1$lat,breaks=c(0,seq(23,24,0.1),40))
-hist(contacts_jit$lat-contacts_fluscape_V1$lat)
+## hist(contacts_jit$lat-contacts_fluscape_V1$lat)
 
 #' rename and write the potentially personally identifiable version to the local temp directory
 save(contacts_fluscape_V1,file=paste0(local_data_dir,"/","contacts_fluscape_V1.rda"))
