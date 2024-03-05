@@ -25,11 +25,9 @@ load_all()
 local_data_dir <- "D:/tmp" # jon
 fluscape_top_dir <- "../fluscape/"
 
-source("../fluscape/source/R/mob_utility_private.r")
-source("../fluscape/source/R/fluscape_copy_stevensRfunctions.R")
-source("../fluscape/source/R/GeneralUtility.r")
-
-#' ## Load the population density matrix
+source(paste0(fluscape_top_dir,"source/R/mob_utility_private.r"))
+source(paste0(fluscape_top_dir,"source/R/fluscape_copy_stevensRfunctions.R"))
+source(paste0(fluscape_top_dir,"source/R/GeneralUtility.r"))
 
 #' Load the snapshot of landscan saved into the fluscape directory
   x1 <- fsc.load.wide.raster(fluscapetopdir=fluscape_top_dir)
@@ -53,6 +51,13 @@ source("../fluscape/source/R/GeneralUtility.r")
 #' Set area boundary
   long.lim = c( 112.8, 114.2 )
   lat.lim = c( 22.6, 24.0 )
+
+#' These are old versions of the data
+part_all <- load_particpant_data_long()
+cont_all <- read.csv("../fluscape/data/clean_datasets/ContactsAll.csv")
+dim(part_all)
+names(part_all)
+
 
 #' Keep old data line in just in case. Not run.
 ## contacts_0 <- mob_load_old_contact_data( locations, households, participants )
