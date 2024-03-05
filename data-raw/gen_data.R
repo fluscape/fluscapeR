@@ -5,9 +5,9 @@
 #' output: html_document
 #' ---
 
-#' This file is designed to be run with the private fluscape repo sat next to this development 
-#' version of the fluscapeR package. It will source some functions not available to fluscape 
-#' and will make versions of th key data that are not available to the public. It will also create 
+#' This file is designed to be run with the private fluscape repo sat next to this development
+#' version of the fluscapeR package. It will source some functions not available to fluscape
+#' and will make versions of th key data that are not available to the public. It will also create
 #' the jittered public versions of the data that are included in the package.
 
 #' Clear memory, setup required libraries and set local data dir
@@ -15,14 +15,14 @@ rm(list=ls(all=TRUE))
 
 library(devtools)
 library(raster)
-library(readr)
+library(tidyverse)
+library(raster)
 
-#' The script is designed to be run in with pwd set to the fluscapeR source directory
 load_all()
 
-#' Assumes that the soure package fluscapeR is next to main private fluscape repo in a local
-#' filesystem
-local_data_dir <- "~/tmp"
+#' Assumes that the soure package fluscapeR is next to main private fluscape repo
+#local_data_dir <- "~/tmp" # Steven
+local_data_dir <- "D:/tmp" # jon
 fluscape_top_dir <- "../fluscape/"
 
 source(paste0(fluscape_top_dir,"source/R/mob_utility_private.r"))
@@ -30,21 +30,27 @@ source(paste0(fluscape_top_dir,"source/R/fluscape_copy_stevensRfunctions.R"))
 source(paste0(fluscape_top_dir,"source/R/GeneralUtility.r"))
 
 #' Load the snapshot of landscan saved into the fluscape directory
-x1 <- fsc.load.wide.raster(fluscapetopdir=fluscape_top_dir)
+  x1 <- fsc.load.wide.raster(fluscapetopdir=fluscape_top_dir)
 
 #' This is not yet saved as a package data object, until I see how it get used later
 
 #' ## Make the contacts data base for visit 1 and a jittered version
-#' 
-#' The non-jittered version is NOT used in the package, but is generated here so that the 
-#' analysis can be run by the fluscape team from exactly the same code that others would 
+#'
+#' The non-jittered version is NOT used in the package, but is generated here so that the
+#' analysis can be run by the fluscape team from exactly the same code that others would
 #' use to test the methods.
 
-#' Load the standard visit 1 data sets
-locations <- load.and.merge.locs.V1( topdir = fluscape_top_dir , make.corrections=TRUE)
-households <- load.household.data.V1(topdir = fluscape_top_dir)
-participants <- load.and.merge.part.V1(topdir = fluscape_top_dir)
-participants$pid = paste(participants$LOC_ID, participants$HH_ID, participants$PARTICIPANT_ID, sep="_")
+#' Load the fluscape data sets, and trim to visit 1
+  participants <- load_particpant_data_long(topdir = fluscape_top_dir)
+  participants <- participants[participants$VISIT==1,]
+  participants$pid = paste(participants$LOC_ID, participants$HH_ID, participants$PARTICIPANT_ID, sep="_")
+  households <- load_hh_data_long(topdir = fluscape_top_dir)
+  # recreate locations information from households
+  locations <- unique( households[,c("LOC_ID","LOC_Lat","LOC_Long","URBAN","DIST_FRM_GZ")] )
+
+#' Set area boundary
+  long.lim = c( 112.8, 114.2 )
+  lat.lim = c( 22.6, 24.0 )
 
 #' These are old versions of the data
 part_all <- load_particpant_data_long()
@@ -52,9 +58,6 @@ cont_all <- read.csv("../fluscape/data/clean_datasets/ContactsAll.csv")
 dim(part_all)
 names(part_all)
 
-#' Set area boundary. Not exatly sure where this comes from and is not currently used, so commented out for now
-long.lim = c( 112.8, 114.2 )
-lat.lim = c( 22.6, 24.0 )
 
 #' Keep old data line in just in case. Not run.
 ## contacts_0 <- mob_load_old_contact_data( locations, households, participants )
@@ -62,31 +65,41 @@ lat.lim = c( 22.6, 24.0 )
 #' Generate actual potentially identifiable data and main jittered data
 #' The approximate conversions are: Latitude: 1 deg = 110.574 km. Longitude: 1 deg = 111.320*cos(latitude) km. So at 23 degrees, 1 degree of logitude is 110*cos(23/180*pi) = 101 ~= 100
 #' SO a jitter error of 100 metres is a jitter of 0.001
-contacts_fluscape_V1 <- mob_generate_contacts_data_from_scratch(locations, households, participants,
-                                                      jitterxy=FALSE, topdir=fluscape_top_dir)
-contacts_jit <- mob_generate_contacts_data_from_scratch(locations, households, participants,
-                                                      jitterxy=TRUE, jitter_error=0.001,x1=x1,
-                                                      topdir=fluscape_top_dir )
-                                                      
-hist(contacts_fluscape_V1$lat,breaks=c(0,seq(23,24,0.1),40))
-## hist(contacts_jit$lat-contacts_fluscape_V1$lat)
+  contacts_fluscape_V1 <- mob_generate_contacts_data_from_scratch(
+    locations,
+    households,
+    participants,
+    jitterxy=FALSE,
+    topdir=fluscape_top_dir
+  )
+  contacts_jit <- mob_generate_contacts_data_from_scratch(
+    locations,
+    households,
+    participants,
+    jitterxy=TRUE,
+    jitter_error=0.001,
+    x1=x1,
+    topdir=fluscape_top_dir
+  )
+# assess the jittering
+  hist(contacts_fluscape_V1$lat,breaks=c(0,seq(23,24,0.1),40))
+  hist(contacts_jit$lat-contacts_fluscape_V1$lat)
 
 #' rename and write the potentially personally identifiable version to the local temp directory
-save(contacts_fluscape_V1,file=paste0(local_data_dir,"/","contacts_fluscape_V1.rda"))
+  save(contacts_fluscape_V1,file=paste0(local_data_dir,"/","contacts_fluscape_V1.rda"))
 
 #' Rename and use 100m jittered data
-contacts_V1_jittered_100m <- contacts_jit
-usethis::use_data(contacts_V1_jittered_100m, overwrite = TRUE)
+  contacts_V1_jittered_100m <- contacts_jit
+  usethis::use_data(contacts_V1_jittered_100m, overwrite = TRUE)
 
 #' ## Make the S matrix
-library(raster)
-lat.lim2 <- as.vector(c(22.11667,24.50833))
-long.lim2 <- as.vector(c(112.2667,114.8000))
-margin <- 0
-ext <- extent(
-  long.lim2[1]-margin,long.lim2[2]+margin,lat.lim2[1]-margin,lat.lim2[2]+margin
-)
-gz_pop_raster <- crop(x1,ext)
+  lat.lim2 <- as.vector(c(22.11667,24.50833))
+  long.lim2 <- as.vector(c(112.2667,114.8000))
+  margin <- 0
+  ext <- extent(
+    long.lim2[1]-margin,long.lim2[2]+margin,lat.lim2[1]-margin,lat.lim2[2]+margin
+  )
+  gz_pop_raster <- crop(x1,ext)
 
 #' Brings in the S matrix for called pop_S_mat_fluscape
 load("~/dbox/shares/me_jr_hm_dc_gravity/current/to_upload/pop_S_mat_fluscape.rda")
@@ -155,7 +168,7 @@ source("http://tinyurl.com/5t7gwnv")
 
 datadir <- "../../data/"
 
-# Load up the required study data 
+# Load up the required study data
 contacts <- read.csv(paste(datadir,"destination_data.csv",sep=""))
 participants <- read.csv(paste(datadir,"Participants_V1.csv",sep=""))
 households <- read.csv(paste(datadir,"HouseHolds_V1.csv",sep=""))
@@ -164,7 +177,7 @@ households <- read.csv(paste(datadir,"HouseHolds_V1.csv",sep=""))
 require("raster") # help("raster-package")
 require("rgdal")
 
-# 
+#
 contacts_tmp <- contacts[contacts$LOC_ID<=5 & contacts$LOC_ID!=2,]
 
 contacts_small <- contacts_tmp[!is.na(contacts_tmp$long) | !is.na(contacts_tmp$lat) | !is.na(contacts_tmp$HH_Long) | !is.na(contacts_tmp$HH_Lat),]
@@ -180,19 +193,19 @@ x1 <- fsc.load.wide.raster()
  ext <- extent(113.2,114.5,22.7,23.6) # suitable for LOC_ID<=5 & LOC_ID!=2
 x2 <- crop(x1,ext)
 
-#destindices <- fsc.gen.dest.index(x2) 
+#destindices <- fsc.gen.dest.index(x2)
 #originindices <- fsc.gen.origin.index(originx,originy,x2)
-#distances <- fsc.gen.dist.matrix(x2,originindices,destindices) 
+#distances <- fsc.gen.dist.matrix(x2,originindices,destindices)
 
 # faster non-zero destination indices calulation:
 tmp = getValues(x2)
 cells = which( !is.na(tmp) & tmp>0 )
 destindices <- data.frame(index=1:length(cells), cells=cells)
-  
+
 # faster origin indices calulation:
 cells = unique( cellFromXY(x2, contacts_small[,c("HH_Long","HH_Lat")] ) )
 originindices <- data.frame(index=1:length(cells), cells=cells)
-  
+
 # faster distances calculation:
 a = xyFromCell( x2, destindices$cell )
 b = xyFromCell( x2, originindices$cell )
@@ -216,7 +229,7 @@ nodest 		<- dim(destindices)[1]
 contactindices = cellFromXY( x2, contacts_small[,c("long","lat")] )
 hhindices = cellFromXY( x2, contacts_small[,c("HH_Long","HH_Lat")] )
 obs.tab = matrix( 0, nrow=noorig, ncol=nodest  )
-for (k in 1:noorig) { 
+for (k in 1:noorig) {
     j = originindices$cell[k]
 	i = contactindices[hhindices==j]
 	i = i[!is.na(i)]
@@ -247,7 +260,7 @@ for (i in 1:noorig) {
 #{ destindices$cell[ which(dist<=dist[j]) ]
 #}
 #sum.n <- function( x2, dist, j )
-#{ 
+#{
 #  cells <- destindices$cell[ which(dist<=dist[j]) ]
 #  sum(extract(x2,cells))
 #}
@@ -268,9 +281,11 @@ pb = txtProgressBar(min = 0, max = noorig*nodest, style = 3); k = 0
 for (i in 1:noorig) {
 	dist <- distances[i, ]
 	for (j in 1:nodest) {
-	    k = k + 1; setTxtProgressBar( pb, k )
+	  k = k + 1; setTxtProgressBar( pb, k )
+	  k = k + 1
 		radcell <- destindices$cell[ which(dist<=dist[j]) ] # all dest cells within radius dist
 		S[i,j] = sum( extract(x2,radcell) )
+		setTxtProgressBar( pb, k )
 	}
 }
 close(pb)
