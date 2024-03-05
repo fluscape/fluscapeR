@@ -53,8 +53,8 @@ dim(part_all)
 names(part_all)
 
 #' Set area boundary. Not exatly sure where this comes from and is not currently used, so commented out for now
-## long.lim = c( 112.8, 114.2 )
-## lat.lim = c( 22.6, 24.0 )
+long.lim = c( 112.8, 114.2 )
+lat.lim = c( 22.6, 24.0 )
 
 #' Keep old data line in just in case. Not run.
 ## contacts_0 <- mob_load_old_contact_data( locations, households, participants )
@@ -110,6 +110,26 @@ pop_S_mat_fluscape <- readRDS( "~/dbox/projects/mobility/socio-spatial-behaviour
 # data
 
 # Up to here XXXX needs to work below
+
+fnLog <- paste0(local_data_dir,"/gravity_log_debug.csv")
+if (!file.exists(fnLog)) {
+    dftmp <- make.data.df(nrow=0)
+    write.csv(dftmp,fnLog,row.names=FALSE)
+}
+
+tmp1 <- fit.mobility.model(
+        contacts_fluscape_V1,
+        gz_pop_raster,
+        Smat = pop_S_mat_fluscape,
+        logfile = fnLog,
+        optfun = fit.offset.radiation.optim,
+        psToFit = c("offset"),
+        psLB = c(1),
+        psUB = c(20*1000),
+        datasubset = "ALL",
+        fdebug=TRUE,
+        lognote = ""
+    )
 
 comp <- fit.mobility.model(
   contacts_fluscape_V1,
