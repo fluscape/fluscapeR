@@ -21,8 +21,8 @@ library(raster)
 load_all()
 
 #' Assumes that the soure package fluscapeR is next to main private fluscape repo
-#local_data_dir <- "~/tmp" # Steven
-local_data_dir <- "D:/tmp" # jon
+local_data_dir <- "~/tmp" # Steven
+local_data_dir <- "D:/tmp" # Jon
 fluscape_top_dir <- "../fluscape/"
 
 source(paste0(fluscape_top_dir,"source/R/mob_utility_private.r"))
@@ -53,12 +53,10 @@ source(paste0(fluscape_top_dir,"source/R/GeneralUtility.r"))
   lat.lim = c( 22.6, 24.0 )
 
 #' These are old versions of the data
-part_all <- load_particpant_data_long()
-cont_all <- read.csv("../fluscape/data/clean_datasets/ContactsAll.csv")
-dim(part_all)
-names(part_all)
-
-
+# part_all <- load_particpant_data_long()
+# cont_all <- read.csv("../fluscape/data/clean_datasets/ContactsAll.csv")
+# dim(part_all)
+# names(part_all)
 #' Keep old data line in just in case. Not run.
 ## contacts_0 <- mob_load_old_contact_data( locations, households, participants )
 
@@ -84,6 +82,8 @@ names(part_all)
 # assess the jittering
   hist(contacts_fluscape_V1$lat,breaks=c(0,seq(23,24,0.1),40))
   hist(contacts_jit$lat-contacts_fluscape_V1$lat)
+  plot( contacts_fluscape_V1$HH_Long, contacts_fluscape_V1$HH_Lat, pch=16, cex=.3, col="blue", xlim=c(113.5,113.6), ylim=c(23.2,23.3))
+  points( contacts_jit$HH_Long, contacts_jit$HH_Lat, pch=16, cex=.3, col="red")
 
 #' rename and write the potentially personally identifiable version to the local temp directory
   save(contacts_fluscape_V1,file=paste0(local_data_dir,"/","contacts_fluscape_V1.rda"))
@@ -92,7 +92,7 @@ names(part_all)
   contacts_V1_jittered_100m <- contacts_jit
   usethis::use_data(contacts_V1_jittered_100m, overwrite = TRUE)
 
-#' ## Make the S matrix
+#' ## Prep for making the S matrix
   lat.lim2 <- as.vector(c(22.11667,24.50833))
   long.lim2 <- as.vector(c(112.2667,114.8000))
   margin <- 0
@@ -101,20 +101,23 @@ names(part_all)
   )
   gz_pop_raster <- crop(x1,ext)
 
-#' Brings in the S matrix for called pop_S_mat_fluscape
-load("~/dbox/shares/me_jr_hm_dc_gravity/current/to_upload/pop_S_mat_fluscape.rda")
+#' Brings in the previously generated S matrix for called pop_S_mat_fluscape
+  load("~/dbox/shares/me_jr_hm_dc_gravity/current/to_upload/pop_S_mat_fluscape.rda") # steven
+  load("D:/tmp/pop_S_mat_fluscape.rda") # jon
+  # transfer this binary to jons machine
+  str(pop_S_mat_fluscape)
 
 #' Firstly, we need to check that we can run this just for a small example. This test will also be
 #' repeated in one of the package vingettes.
-popsize_vector = values(popmatrix)
-D=ncell(popsize_vector)
-gz_pop_raster_agg <- aggregate(gz_pop_raster,popsize_vector,D,10)
-pop_S_mat_fluscape_agg <- mob_calc_S_mat(gz_pop_raster_agg)
-dim(pop_S_mat_fluscape_agg)
+  popsize_vector = values(popmatrix)
+  D=ncell(popsize_vector)
+  gz_pop_raster_agg <- aggregate(gz_pop_raster,popsize_vector,D,10)
+  pop_S_mat_fluscape_agg <- mob_calc_S_mat(gz_pop_raster_agg)
+  dim(pop_S_mat_fluscape_agg)
 
 #' Now I need to load up the pre-calculated object and compare it with the size of this then
 #' find the right size of matrix so I can check the radiation model runs.
-pop_S_mat_fluscape <- readRDS( "~/dbox/projects/mobility/socio-spatial-behaviour/tmpdata/read_et_al_S_margin.rds")
+#  pop_S_mat_fluscape <- readRDS( "~/dbox/projects/mobility/socio-spatial-behaviour/tmpdata/read_et_al_S_margin.rds")
 
 
 #' ## Code below here from Jon and must be an alternative way of making the S matrix. I just need to figure ot out. I will only need a little bit of it
@@ -130,6 +133,7 @@ if (!file.exists(fnLog)) {
     write.csv(dftmp,fnLog,row.names=FALSE)
 }
 
+# fit radiation model to previous existing instance of S matrix, pop_S_mat_fluscape
 tmp1 <- fit.mobility.model(
         contacts_fluscape_V1,
         gz_pop_raster,
@@ -144,41 +148,13 @@ tmp1 <- fit.mobility.model(
         lognote = ""
     )
 
-comp <- fit.mobility.model(
-  contacts_fluscape_V1,
-  gz_pop_raster,
-  logfile = "~/dbox/tmp/gravitylog.txt",
-  optfun = fit.gravity.poppower.optim.nowithinregion,
-  psToFit = c("Power", "DestPower"),
-  psLB = c(0.1, 0.1),
-  psUB = c(6, 4),
-  datasubset = "ALL",
-  pJustLike = c(2.646, 0.51375)
-)
+
+#------------------ works up to here.... ---------------------#
 
 
-# Clear all other previous symbols and set a local working directory
-rm(list=ls(all=TRUE))
-setwd("/Users/sriley/Dropbox/svneclipse/fluscape/manuscripts/gravity")
-# setwd("/home/sriley/Dropbox/svneclipse/fluscape/manuscripts/gravity")
-# setwd("D:/Users/jon/Dropbox/work/Fluscape/manuscripts/gravity")
-
-# source("../../../idsource/R/stevensRfunctions.R")
-source("http://tinyurl.com/5t7gwnv")
-
-datadir <- "../../data/"
-
-# Load up the required study data
-contacts <- read.csv(paste(datadir,"destination_data.csv",sep=""))
-participants <- read.csv(paste(datadir,"Participants_V1.csv",sep=""))
-households <- read.csv(paste(datadir,"HouseHolds_V1.csv",sep=""))
-
-# Make the first population transect
-require("raster") # help("raster-package")
-require("rgdal")
-
-#
-contacts_tmp <- contacts[contacts$LOC_ID<=5 & contacts$LOC_ID!=2,]
+contacts <- contacts_fluscape_V1
+# contacts_tmp <- contacts[contacts$LOC_ID<=5 & contacts$LOC_ID!=2,]
+contacts_tmp <- contacts
 
 contacts_small <- contacts_tmp[!is.na(contacts_tmp$long) | !is.na(contacts_tmp$lat) | !is.na(contacts_tmp$HH_Long) | !is.na(contacts_tmp$HH_Lat),]
 range(contacts_small$long)
@@ -187,22 +163,25 @@ originx <- contacts_small$HH_Long
 originy <- contacts_small$HH_Lat
 dim(contacts_small)
 
-x1 <- fsc.load.wide.raster()
- # JON: x1 <- fsc.load.wide.raster(fluscapetopdir="D:/Users/jon/svn folder/")
 # ext <- extent(113.2,114.5,22.5,23.5) # suitable for LOC_ID==1
- ext <- extent(113.2,114.5,22.7,23.6) # suitable for LOC_ID<=5 & LOC_ID!=2
+# ext <- extent(113.2,114.5,22.7,23.6) # suitable for LOC_ID<=5 & LOC_ID!=2
+ext <- extent(
+  min(contacts_small$long),
+  max(contacts_small$long),
+  min(contacts_small$lat),
+  max(contacts_small$lat)) # suitable for all locations
 x2 <- crop(x1,ext)
 
 #destindices <- fsc.gen.dest.index(x2)
 #originindices <- fsc.gen.origin.index(originx,originy,x2)
 #distances <- fsc.gen.dist.matrix(x2,originindices,destindices)
 
-# faster non-zero destination indices calulation:
+# faster non-zero destination indices calculation:
 tmp = getValues(x2)
 cells = which( !is.na(tmp) & tmp>0 )
 destindices <- data.frame(index=1:length(cells), cells=cells)
 
-# faster origin indices calulation:
+# faster origin indices calculation:
 cells = unique( cellFromXY(x2, contacts_small[,c("HH_Long","HH_Lat")] ) )
 originindices <- data.frame(index=1:length(cells), cells=cells)
 
@@ -211,48 +190,55 @@ a = xyFromCell( x2, destindices$cell )
 b = xyFromCell( x2, originindices$cell )
 distances = pointDistance( b, a, longlat=T )
 
-
-
-# save.image()
-# rm(list=ls(all=TRUE))
-# load(".RData")
-
 # Next steps
 # - generate a matrix of observations
 # - generate a gravity model
 # - compare the gravity models with the data
 
-noorig 		<- dim(originindices)[1]
-nodest 		<- dim(destindices)[1]
+# number of origin and possible destination cells
+  noorig <- dim(originindices)[1] # number of origin cells
+  nodest <- dim(destindices)[1] # number of possible destination cells, large!
 
-# observations
-contactindices = cellFromXY( x2, contacts_small[,c("long","lat")] )
-hhindices = cellFromXY( x2, contacts_small[,c("HH_Long","HH_Lat")] )
-obs.tab = matrix( 0, nrow=noorig, ncol=nodest  )
-for (k in 1:noorig) {
+# make a matrix of observed contact origin-destinations
+  contactindices = cellFromXY( x2, contacts_small[,c("long","lat")] ) # in which cells did contact occur?
+  hhindices = cellFromXY( x2, contacts_small[,c("HH_Long","HH_Lat")] ) # which cells have participant households?
+  obs.tab = matrix( 0, nrow=noorig, ncol=nodest  ) # matrix of observations
+  pb = txtProgressBar(min = 0, max = noorig, initial = 0)
+  for (k in 1:noorig) {
     j = originindices$cell[k]
-	i = contactindices[hhindices==j]
-	i = i[!is.na(i)]
-	z = table(i)
-	i.indices = match(as.numeric(names(z)),destindices$cells)
-	obs.tab[k,i.indices] = as.numeric(z)
-}
+  	i = contactindices[hhindices==j]
+  	i = i[!is.na(i)]
+  	z = table(i)
+  	i.indices = match(as.numeric(names(z)),destindices$cells)
+  	obs.tab[k,i.indices] = as.numeric(z)
+  	setTxtProgressBar(pb,k)
+  }
+  close(pb)
 
 
 # faster gravity model generation
 M <- 1
-gravmodel <- matrix( nrow=noorig, ncol=nodest )
-for (i in 1:noorig) {
-		orcell 	<- originindices$cell[i]
-		dscell 	<- destindices$cell
-		n_o 	<- extract(x2,orcell)
-		n_d 	<- extract(x2,dscell)
-		dist 	<- distances[i, ]
-		gravmodel[i, ] <- (n_o * n_d) / (500 + dist^M)
-}
-for (i in 1:noorig) {
-	gravmodel[i,] <- gravmodel[i,] / sum(gravmodel[i,])
-}
+# Make a matrix of predicted origin-destination weights for gravity model
+#   with an offset of 500 and a power term M.
+  gravmodel <- matrix( nrow=noorig, ncol=nodest )
+  pb = txtProgressBar(min = 0, max = noorig, initial = 0)
+  for (i in 1:noorig) {
+  		orcell 	<- originindices$cell[i]
+  		dscell 	<- destindices$cell
+  		n_o 	<- extract(x2,orcell)
+  		n_d 	<- extract(x2,dscell)
+  		dist 	<- distances[i, ]
+  		gravmodel[i, ] <- (n_o * n_d) / (500 + dist^M)
+  		setTxtProgressBar(pb,i)
+  }
+  close(pb)
+  pb = txtProgressBar(min = 0, max = noorig, initial = 0)
+  for (i in 1:noorig) {
+  	gravmodel[i,] <- gravmodel[i,] / sum(gravmodel[i,])
+  	setTxtProgressBar(pb,i)
+  }
+  close(pb)
+
 
 
 ### WORK IN PROGRESS... NOT WORKING. IGNORE. START
@@ -275,23 +261,24 @@ for (i in 1:noorig) {
 
 
 
-# find radiation density sums
-S <- matrix( nrow=noorig, ncol=nodest )
-pb = txtProgressBar(min = 0, max = noorig*nodest, style = 3); k = 0
-for (i in 1:noorig) {
-	dist <- distances[i, ]
-	for (j in 1:nodest) {
-	  k = k + 1; setTxtProgressBar( pb, k )
-	  k = k + 1
-		radcell <- destindices$cell[ which(dist<=dist[j]) ] # all dest cells within radius dist
-		S[i,j] = sum( extract(x2,radcell) )
-		setTxtProgressBar( pb, k )
-	}
-}
-close(pb)
-# write.csv(S, "S.csv")
+# Find radiation density sums, s_ij, for each orig-dest cell combination.
+#   Finds the total population density within equivalent distance from the origin.
+# Warning, this is slow and takes a long time.
+#   Save to disk after generation for future use.
+  S <- matrix( nrow=noorig, ncol=nodest )
+  for (i in 1:noorig) {
+    print(paste(i,"/",noorig))
+  	dist <- distances[i, ]
+  	pb = txtProgressBar(min = 0, max = nodest, style = 3)
+  	for (j in 1:nodest) {
+  	  radcell <- destindices$cell[ which(dist<=dist[j]) ] # all destination cells within radius dist
+  		S[i,j] = sum( extract(x2,radcell) )
+  		setTxtProgressBar( pb, j )
+  	  close(pb)
+  	}
+  }
+# write.csv(S, "S.csv", row.names=FALSE)
 # S <- as.matrix( read.csv("S.csv") ) # To read back in.
-
 
 
 # fast radiation model, given S_ij
