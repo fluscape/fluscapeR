@@ -153,24 +153,25 @@ tmp1 <- fit.mobility.model(
 
 
 contacts <- contacts_fluscape_V1
-# contacts_tmp <- contacts[contacts$LOC_ID<=5 & contacts$LOC_ID!=2,]
-contacts_tmp <- contacts
+  # contacts_tmp <- contacts[contacts$LOC_ID<=5 & contacts$LOC_ID!=2,]
+  contacts_tmp <- contacts
 
-contacts_small <- contacts_tmp[!is.na(contacts_tmp$long) | !is.na(contacts_tmp$lat) | !is.na(contacts_tmp$HH_Long) | !is.na(contacts_tmp$HH_Lat),]
-range(contacts_small$long)
-range(contacts_small$lat)
-originx <- contacts_small$HH_Long
-originy <- contacts_small$HH_Lat
-dim(contacts_small)
+  contacts_small <- contacts_tmp[!is.na(contacts_tmp$long) | !is.na(contacts_tmp$lat) | !is.na(contacts_tmp$HH_Long) | !is.na(contacts_tmp$HH_Lat),]
+  range(contacts_small$long)
+  range(contacts_small$lat)
+  originx <- contacts_small$HH_Long
+  originy <- contacts_small$HH_Lat
+  dim(contacts_small)
 
-# ext <- extent(113.2,114.5,22.5,23.5) # suitable for LOC_ID==1
-# ext <- extent(113.2,114.5,22.7,23.6) # suitable for LOC_ID<=5 & LOC_ID!=2
-ext <- extent(
-  min(contacts_small$long),
-  max(contacts_small$long),
-  min(contacts_small$lat),
-  max(contacts_small$lat)) # suitable for all locations
-x2 <- crop(x1,ext)
+  # Find the spatial extent of destination long-lats, and crop landscan density raster.
+    # ext <- extent(113.2,114.5,22.5,23.5) # suitable for LOC_ID==1
+    # ext <- extent(113.2,114.5,22.7,23.6) # suitable for LOC_ID<=5 & LOC_ID!=2
+    ext <- extent(
+      min(contacts_small$long),
+      max(contacts_small$long),
+      min(contacts_small$lat),
+      max(contacts_small$lat)) # suitable for all locations
+    x2 <- crop(x1,ext)
 
 #destindices <- fsc.gen.dest.index(x2)
 #originindices <- fsc.gen.origin.index(originx,originy,x2)
@@ -271,7 +272,8 @@ M <- 1
   	dist <- distances[i, ]
   	pb = txtProgressBar(min = 0, max = nodest, style = 3)
   	for (j in 1:nodest) {
-  	  radcell <- destindices$cell[ which(dist<=dist[j]) ] # all destination cells within radius dist
+  	  within_d = which(dist<=dist[j])
+  	  radcell <- destindices$cell[within_d] # all destination cells within radius dist
   		S[i,j] = sum( extract(x2,radcell) )
   		setTxtProgressBar( pb, j )
   	  close(pb)
@@ -279,6 +281,71 @@ M <- 1
   }
 # write.csv(S, "S.csv", row.names=FALSE)
 # S <- as.matrix( read.csv("S.csv") ) # To read back in.
+
+# jon: see D:\Users\jon\Dropbox\work\Fluscape\source\R\gravy_functions.R
+  gravy.fast.calc.S <- function( distances, x2, originindices, noorig, nodest,
+                                 write.to.file=TRUE, filename="auxilliary/tmp_S.csv" ) {
+    # Faster function to calculate S_ij, the sum of population densities within radius r_ij,
+    # 	for each origin-destination pair.
+    # Inputs:
+    # 	distances
+    #	x2
+    #	originindices
+    #	noorig
+    #	nodest
+    # Outputs:
+    #	S -- matrix of S_ij, where rows correspond to originindices, and columns to destinations.
+    max.r = max(distances) # maximum distance
+    max.rij = which( distances==max.r, arr.ind=TRUE  ) # which pair is it?
+    # ADD CHECK ***HERE*** THAT x2 IS BIG ENOUGH GIVEN ORIGINS AND max.rij
+      print("Warning: no automatic check that x2 is large enough to generate correct S_ij.")
+    allindices <- gravy.gen.dest.index( x2 )
+    all.distances <- gravy.gen.dist.matrix( x2, originindices, allindices ) # distances from origins to all possible cells
+    maxj = nrow(allindices)
+    S = matrix( 0, nrow=noorig, ncol=maxj )
+    for (i in 1:noorig) {
+      png(filename="S_prog.png")
+      plot( i, main=paste( "i =", i ) )
+      dev.off()
+      cell.i = originindices$cells[i]
+      n_i = extract( x2, cell.i ) # density in cell i
+      cell.j = destindices[ ,2]
+      r.ij = all.distances[i, ]
+      rank.r.ij <- rank( r.ij, ties.method="min" )
+      d.ij <- data.frame( j=cell.j, rank.d=rank.r.ij, d=r.ij, n=0 )
+      d.ij = d.ij[order(d.ij$d), ]
+      k.seq = unique(d.ij$rank)
+      # k: 1
+      nk = length(k.seq)
+      k1 = which( all.distances[i,]>=0 &
+                    all.distances[i,]<=d.ij$d[1] )
+      j = allindices$cells[ k1 ]
+      n.j = extract( x2, j )
+      d.ij$S[1] = sum( n.j )
+      # k: 2 ... nk
+      pb = txtProgressBar(min=0,max=nk,style=3)
+      for (k in k.seq[2:nk]) {
+        setTxtProgressBar(pb,k)
+        k1 = which( all.distances[i,]>d.ij$d[k-1] &
+                      all.distances[i,]<=d.ij$d[k] )
+        j = allindices$cells[ k1 ]
+        n.j = extract( x2, j )
+        d.ij$n[k] = sum( n.j )
+      }
+      close(pb)
+      d.ij$S = cumsum( d.ij$n )
+      k2 = match( d.ij$j, allindices$cells )
+      S[i,k2] <- d.ij$S
+
+    }
+    if (write.to.file==TRUE) {
+      write.csv( S, filename, row.names=F )
+    }
+    return( S )
+  }
+
+
+
 
 
 # fast radiation model, given S_ij
