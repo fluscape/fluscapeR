@@ -12,14 +12,12 @@ Part of the analysis involves the creation and then use of a large binary object
 
 ## Tasks
 
-To do
-- [ ] reproduce a radiation model result using and existing S matrix binary at the end of the gen_data.R script
-- [ ] figure out how Jon's code works to make the S matrix and rerun a new calculation that is consistent with the S matrix
-- [ ] based on read_et_al_example.r write a vingette that could remake key numbers from the key table but would be very slow and messy
+To dos
+- [ ] figure out how Jon's code works to make the S matrix and rerun a new calculation that is consistent with the existing binary S matrix
+- [ ] based on read_et_al_example.r write a vingette that could remake key numbers from the parameter esitmation table but would be very slow and messy
 - [ ] check key numbers using that vingette for jittered and ppii versions of the data 
 - [ ] put the code to actually reproduce the table into the project github, and remake the table
 - [ ] remake the table fromt he jittered version of the data 
-- [ ] remake the large rda file and upload to zenodo
 - [ ] remake one figure in the paper
 
 Possible To Dos
@@ -29,6 +27,7 @@ Possible To Dos
 - [ ] redraft conclusion
 
 Recently completed
+- [x] reproduce a radiation model result using and existing S matrix binary at the end of the gen_data.R script
 - [x] reconfirm the creation of the contacts data we use for the study
 - [x] organise the code on fluscape to make this easy
 - [x] recreate fluscapeR into either rfluscape or fluscapeidd or immunescape [decided against]
@@ -86,3 +85,7 @@ Searching for "s_margin" found what could likely be the right call. Now just nee
 ## 29 Jan 2023
 
 Jon sent some code that he thinks he ran to get this to work. Need to check on that. ALso moved this file here to the fluscapeR package, rather than leaving it the manuscripts directory in the main fluscape github.
+
+## 7 Mar 2024
+
+SR and JR worked at FluScape lakes retreat to get the data generation working and reproduce the key model fit results. They found that the offset radiation model ran fine with the new participant and contact data from the canonical run in the fluscape repo. This was done with the old S matrix that was loaded as a binary. Jon started to look at the code to generate a new S matrix that could reproduce the same results.
