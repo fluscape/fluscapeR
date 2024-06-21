@@ -260,8 +260,6 @@ M <- 1
 #	no_ij <- sum.n( x2, i, j )
 ### WORK IN PROGRESS... NOT WORKING. IGNORE. END
 
-
-
 # Find radiation density sums, s_ij, for each orig-dest cell combination.
 #   Finds the total population density within equivalent distance from the origin.
 # Warning, this is slow and takes a long time.
