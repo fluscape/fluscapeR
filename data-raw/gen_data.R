@@ -23,14 +23,16 @@ load_all()
 #' Assumes that the soure package fluscapeR is next to main private fluscape repo
 local_data_dir <- "~/tmp" # Steven
 local_data_dir <- "D:/tmp" # Jon
+local_data_dir <- "G:/OneDrive - Imperial College London/Postdoc/Fluscape/fluscapeR/fluscapeR/" # Vivi
 fluscape_top_dir <- "../fluscape/"
+fluscape_top_dir <- "G:/OneDrive - Imperial College London/Postdoc/Fluscape/fluscape/" # Vivi
 
 source(paste0(fluscape_top_dir,"source/R/mob_utility_private.r"))
 source(paste0(fluscape_top_dir,"source/R/fluscape_copy_stevensRfunctions.R"))
 source(paste0(fluscape_top_dir,"source/R/GeneralUtility.r"))
 
 #' Load the snapshot of landscan saved into the fluscape directory
-  x1 <- fsc.load.wide.raster(fluscapetopdir=fluscape_top_dir)
+ x1 <- fsc.load.wide.raster(fluscapetopdir=fluscape_top_dir)
 
 #' This is not yet saved as a package data object, until I see how it get used later
 
@@ -59,6 +61,12 @@ source(paste0(fluscape_top_dir,"source/R/GeneralUtility.r"))
 # names(part_all)
 #' Keep old data line in just in case. Not run.
 ## contacts_0 <- mob_load_old_contact_data( locations, households, participants )
+
+#' If you have saved contacts_fluscape_V1 in your local,
+#' you can load this contacts_fluscape_V1.rda directly and skip line 71-80,
+#' otherwise you need to run line 71-80 and save it as a local file
+#' In the future, we may intergrate it in the pacakge.
+load(file=paste0(local_data_dir,"/","contacts_fluscape_V1.rda"))
 
 #' Generate actual potentially identifiable data and main jittered data
 #' The approximate conversions are: Latitude: 1 deg = 110.574 km. Longitude: 1 deg = 111.320*cos(latitude) km. So at 23 degrees, 1 degree of logitude is 110*cos(23/180*pi) = 101 ~= 100
@@ -103,6 +111,7 @@ source(paste0(fluscape_top_dir,"source/R/GeneralUtility.r"))
 
 #' Brings in the previously generated S matrix for called pop_S_mat_fluscape
   load("~/dbox/shares/me_jr_hm_dc_gravity/current/to_upload/pop_S_mat_fluscape.rda") # steven
+  load("G:/OneDrive - Imperial College London/Postdoc/Fluscape/fluscapeR/fluscapeR/pop_S_mat_fluscape.rda") # vivi
   load("D:/tmp/pop_S_mat_fluscape.rda") # jon
   # transfer this binary to jons machine
   str(pop_S_mat_fluscape)
@@ -173,6 +182,17 @@ contacts <- contacts_fluscape_V1
       max(contacts_small$lat)) # suitable for all locations
     x2 <- crop(x1,ext)
 
+#' Generating S matrix for radiation model will take very long time (~ a week).
+#' For people who want to run the models by themselves, instead of generating full size
+#' S matrix, we write a function to downsize the raw data and generate a sample S matrix.
+#' Use agg_num to adjust the size - larger agg_num, smaller size
+#' If agg_num = 0, it will calculate based on the full size of the data.
+S.gravity <- generate.agg.Smatrix(contacts_fluscape_V1, x2, 0, "gravity")
+S.raiation <- generate.agg.Smatrix(contacts_fluscape_V1, x2, 10, "radiation")
+#' generate.agg.Smatrix includes codes from line 198 to line 299.
+#' People can test if generate.agg.Smatrix() generates the same results as line 198-299 does
+#' by using fundtion identical().
+
 #destindices <- fsc.gen.dest.index(x2)
 #originindices <- fsc.gen.origin.index(originx,originy,x2)
 #distances <- fsc.gen.dist.matrix(x2,originindices,destindices)
@@ -240,7 +260,8 @@ M <- 1
   }
   close(pb)
 
-
+  #' test if generate.agg.S.radiation() can generate the same result
+  identical(S.gravity, gravmodel)
 
 ### WORK IN PROGRESS... NOT WORKING. IGNORE. START
 #cells_in_range <- function( i, j, dist )
