@@ -16,8 +16,9 @@ library(raster)
 load_all()
 
 #' Assumes that the soure package fluscapeR is next to main private fluscape repo
-local_data_dir <- "C:/Users/haowe/Desktop/fluscapeR" # Vivi
-fluscape_top_dir <- "C:/Users/haowe/Desktop/fluscape/" # Vivi
+#' and that the working directory is the fluscapeR directory
+local_data_dir <- "./"
+fluscape_top_dir <- "../fluscape/" 
 
 source(paste0(fluscape_top_dir,"source/R/mob_utility_private.r"))
 source(paste0(fluscape_top_dir,"source/R/fluscape_copy_stevensRfunctions.R"))
