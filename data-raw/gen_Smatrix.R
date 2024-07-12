@@ -114,7 +114,7 @@ if (!file.exists(fnLog)) {
 fit.sampleS10 <- fit.mobility.model(
   contacts = contacts_fluscape_V1,
   popgrid = x2,
-  Smat = S.raiation.agg,
+  Smat = S.raiation.agg10,
   logfile = fnLog,
   optfun = fit.offset.radiation.optim,
   psToFit = c("offset"),
@@ -128,7 +128,8 @@ fit.sampleS10 <- fit.mobility.model(
 fit.sampleS5 <- fit.mobility.model(
   contacts = contacts_fluscape_V1,
   popgrid = x2,
-  Smat = S.raiation.agg,
+  Smat = S.raiation.agg5,
+  noRepeats=2,
   logfile = fnLog,
   optfun = fit.offset.radiation.optim,
   psToFit = c("offset"),
@@ -142,12 +143,13 @@ fit.sampleS5 <- fit.mobility.model(
 fit.fullS <- fit.mobility.model(
   contacts = contacts_fluscape_V1,
   popgrid = x2,
-  Smat = S.raiation.full,
+  Smat = Spop_S_mat_fluscape,
+  noRepeats=2,
   logfile = fnLog,
   optfun = fit.offset.radiation.optim,
   psToFit = c("offset"),
-  psLB = c(1),
-  psUB = c(20*1000),
+  psLB = c(0.1),
+  psUB = c(0.2),
   datasubset = "ALL",
   fdebug=TRUE,
   lognote = ""
