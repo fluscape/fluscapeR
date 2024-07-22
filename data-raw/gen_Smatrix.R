@@ -71,6 +71,7 @@ points( contacts_jit$HH_Long, contacts_jit$HH_Lat, pch=16, cex=.3, col="red")
 contacts_V1_jittered_100m <- contacts_jit
 usethis::use_data(contacts_V1_jittered_100m, overwrite = TRUE)
 
+############# S martix ###########
 #' Prepare for making S matrix
 contacts <- contacts_fluscape_V1
 # contacts_tmp <- contacts[contacts$LOC_ID<=5 & contacts$LOC_ID!=2,]
@@ -90,6 +91,15 @@ ext <- extent(
   min(contacts_small$lat),
   max(contacts_small$lat)) # suitable for all locations
 x2 <- crop(x1,ext)
+
+#' ## Prep for making the S matrix
+lat.lim2 <- as.vector(c(22.11667,24.50833))
+long.lim2 <- as.vector(c(112.2667,114.8000))
+margin <- 0
+ext2 <- extent(
+  long.lim2[1]-margin,long.lim2[2]+margin,lat.lim2[1]-margin,lat.lim2[2]+margin
+)
+gz_pop_raster <- crop(x1,ext2)
 
 #' Generating S matrix for radiation model will take very long time (~ a week).
 #' For people who want to run the models by themselves, instead of generating full size
@@ -114,13 +124,14 @@ if (!file.exists(fnLog)) {
 #' Fit radiation model to sample S matrix and actual S matrix 
 fit.sampleS10 <- fit.mobility.model(
   contacts = contacts_fluscape_V1,
-  popgrid = x2,
-  Smat = S.raiation.agg10,
-  logfile = fnLog,
-  optfun = fit.offset.radiation.optim,
-  psToFit = c("offset"),
-  psLB = c(1),
-  psUB = c(20*1000),
+  popgrid = S.raiation.agg10$popgrid,
+  noRepeats = 3,
+  Smat = S.raiation.agg10$S,
+  logfile=fnLog, 
+  optfun = NULL,        
+  psToFit = NULL,        
+  psLB = NULL,        
+  psUB = NULL, 
   datasubset = "ALL",
   fdebug=TRUE,
   lognote = ""
@@ -128,14 +139,13 @@ fit.sampleS10 <- fit.mobility.model(
 
 fit.sampleS5 <- fit.mobility.model(
   contacts = contacts_fluscape_V1,
-  popgrid = x2,
-  Smat = S.raiation.agg5,
-  noRepeats=2,
+  popgrid = S.raiation.agg5$popgrid,
+  Smat = S.raiation.agg5$S,
   logfile = fnLog,
-  optfun = fit.offset.radiation.optim,
-  psToFit = c("offset"),
-  psLB = c(1),
-  psUB = c(20*1000),
+  optfun = NULL,        
+  psToFit = NULL,        
+  psLB = NULL,        
+  psUB = NULL, 
   datasubset = "ALL",
   fdebug=TRUE,
   lognote = ""
@@ -143,20 +153,20 @@ fit.sampleS5 <- fit.mobility.model(
 
 fit.fullS <- fit.mobility.model(
   contacts = contacts_fluscape_V1,
-  popgrid = x2,
-  Smat = Spop_S_mat_fluscape,
-  noRepeats=2,
-  logfile = fnLog,
-  optfun = fit.offset.radiation.optim,
-  psToFit = c("offset"),
-  psLB = c(0.1),
-  psUB = c(0.2),
-  datasubset = "ALL",
-  fdebug=TRUE,
-  lognote = ""
+  popgrid = gz_pop_raster,
+  Smat = pop_S_mat_fluscape,
+  logfile=fnLog,        
+  optfun = NULL,        
+  psToFit = NULL,        
+  psLB = NULL,        
+  psUB = NULL,        
+  datasubset="ALL",            
+  fdebug=TRUE, 
+  lognote=""
 )
 
-###################################################
+
+##### The below code is incomplete - ignore it #####
 #' Generate a gravity model
 # faster non-zero destination indices calculation:
 tmp = getValues(x2)

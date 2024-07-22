@@ -68,6 +68,8 @@ generate.agg.Smatrix <- function(contacts,
       close(pb)
     }
   }
-
-  return (S)
+   
+  agg_objects <- list(S = S,
+                      popgrid = x)
+  return (agg_objects)
 }
