@@ -109,8 +109,9 @@ gz_pop_raster <- crop(x1,ext2)
 
 S.raiation.agg10 <- generate.agg.Smatrix(contacts_fluscape_V1, x2, 10)
 S.raiation.agg5 <- generate.agg.Smatrix(contacts_fluscape_V1, x2, 5)
+load("./data/pop_S_mat_fluscape.rda")
 
-S.raiation.full <- generate.agg.Smatrix(contacts_fluscape_V1, x2, 0)
+# S.raiation.full <- generate.agg.Smatrix(contacts_fluscape_V1, x2, 0)
 
 #' Check that the gravity model produces sensible results and try to calculate the likelihood of the
 #' data
