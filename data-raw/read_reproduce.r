@@ -15,36 +15,46 @@
 #' Set wd if needed
 ## setwd("~/Dropbox/shares/me_jr_hm_dc_gravity/elife_repro/act_data")
 ## setwd("~/Dropbox/shares/me_jr_hm_dc_gravity/elife_repro/act_data")
+setwd("C:/Users/haowe/Desktop/fluscapeR/")
 
 #' Clear memory
 rm(list=ls(all=TRUE))
 
 #' Install the required packages if needed
 #' install.packages("R.utils")
-library("optimx")
-library("devtools")
+library(optimx)
+library(devtools)
 
 ## Messing around here
 ## install_github("jameshay218/lazymcmc")
 
 ## library("R.utils")
 
-install("~/dbox/git/lazymcmc",force=TRUE)
+# install("~/dbox/git/lazymcmc",force=TRUE)
+# devtools::install_github("jameshay218/lazymcmc")
+library(lazymcmc)
 
 #' Optional lines for installing developing packages. For batch mode,
 #' the system needs to have the fluscapeR package installed already.
-if (FALSE) {
-    install_github("fluscape/fluscapeR",force=TRUE)
-    ## install("~/Dropbox/git/fluscapeR",force=TRUE)
-    detach("package:fluscapeR",unload=TRUE)
-}
+# if (FALSE) {
+#     install_github("fluscape/fluscapeR",force=TRUE)
+#     ## install("~/Dropbox/git/fluscapeR",force=TRUE)
+#     detach("package:fluscapeR",unload=TRUE)
+# }
+
+load_all()
 library(fluscapeR)
 
 #' Temporary file debugging
 fdb <- FALSE
 
 #' Process the command line arguments for the log file
-args <- commandArgs(trailingOnly = TRUE)
+# args <- commandArgs(trailingOnly = TRUE)
+jobType_opt <- c(1:6)
+datasubset_opt <- c("ALL", "RURAL", "URBAN", "ADULTS", "CHILDREN")
+CONTOPT_vec <- c("ACTUAL", "JITTERED")
+args <- c("./gravity_log_debug.csv", jobType[2], datasubset[1], 20, CONTOPT[1])
+
 noargs <- length(args)
 if (noargs == 5) {
     fnLog <- trimws(args[1])
@@ -59,7 +69,7 @@ if (noargs == 5) {
     datasubset="ALL"
     noreps <- 2
     conts_opt <- "JITTERED"
-    current_wd <- "~/dbox/shares/me_jr_hm_dc_gravity/current/to_upload/"
+    current_wd <- "C:/Users/haowe/Desktop/fluscapeR/"
 } else {
     stop("In script mode, must be either 0 or 3 arguments")
 }
@@ -71,17 +81,19 @@ if (!file.exists(fnLog)) {
 #' Change NAs for 0s in the population density and
 #' load the actual contacts and the large population density
 #' These lines shouldn't be in the main script
-zeromask <- is.na(as.matrix(fluscapeR::gz_pop_raster[,,1]))
+gz_pop_raster <- readRDS("./data/gz_pop_raster.rds")
+zeromask <- is.na(as.matrix(gz_pop_raster[,,1]))
 gz_pop_raster[zeromask] <- 0
-load(paste(current_wd,"pop_S_mat_fluscape.rda",sep=""))
-load(paste(current_wd,"contacts_a_fluscape.rda",sep=""))
+load("./data/pop_S_mat_fluscape.rda") # S matrix
+load("./data/contacts_fluscape_V1.rda") # actual contact 
+load("./data/contacts_V1_jittered_100m.rda") # jittered contact
 
 #' Select contacts option
 if (conts_opt == "JITTERED") {
-    contacts_used <- contacts_jitter_fluscape
+    contacts_used <- contacts_V1_jittered_100m
 } else if (conts_opt == "ACTUAL") {
     cat("Actual contacts NOT available in public version\n")
-    contacts_used <- contacts_a
+    contacts_used <- contacts_fluscape_V1
 } else {
     stop(paste("Invalid contacts option selected : ",conts_opt,conts_opt=="JITTERED"))
 }
@@ -104,7 +116,7 @@ if (conts_opt == "JITTERED") {
 if (jobType == 0) {
     ## Get a specific likelihood value to check the univariate CIs
     fit.mobility.model(
-        contacts_a,
+        contacts_fluscape_V1,
         gz_pop_raster,
         Smat = pop_S_mat_fluscape,
         logfile=fnLog,

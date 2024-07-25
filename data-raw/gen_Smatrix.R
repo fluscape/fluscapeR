@@ -100,6 +100,7 @@ ext2 <- extent(
   long.lim2[1]-margin,long.lim2[2]+margin,lat.lim2[1]-margin,lat.lim2[2]+margin
 )
 gz_pop_raster <- crop(x1,ext2)
+saveRDS(gz_pop_raster, file = paste0(local_data_dir,"/data/","gz_pop_raster.rds"))
 
 #' Generating S matrix for radiation model will take very long time (~ a week).
 #' For people who want to run the models by themselves, instead of generating full size

@@ -23,9 +23,9 @@ load_all()
 #' Assumes that the soure package fluscapeR is next to main private fluscape repo
 local_data_dir <- "~/tmp" # Steven
 local_data_dir <- "D:/tmp" # Jon
-local_data_dir <- "G:/OneDrive - Imperial College London/Postdoc/Fluscape/fluscapeR/fluscapeR/" # Vivi
+local_data_dir <- "./" # Vivi
 fluscape_top_dir <- "../fluscape/"
-fluscape_top_dir <- "G:/OneDrive - Imperial College London/Postdoc/Fluscape/fluscape/" # Vivi
+fluscape_top_dir <- "../fluscape/" # Vivi
 
 source(paste0(fluscape_top_dir,"source/R/mob_utility_private.r"))
 source(paste0(fluscape_top_dir,"source/R/fluscape_copy_stevensRfunctions.R"))
@@ -66,7 +66,7 @@ source(paste0(fluscape_top_dir,"source/R/GeneralUtility.r"))
 #' you can load this contacts_fluscape_V1.rda directly and skip line 71-80,
 #' otherwise you need to run line 71-80 and save it as a local file
 #' In the future, we may intergrate it in the pacakge.
-load(file=paste0(local_data_dir,"/","contacts_fluscape_V1.rda"))
+load(file=paste0(local_data_dir,"contacts_fluscape_V1.rda"))
 
 #' Generate actual potentially identifiable data and main jittered data
 #' The approximate conversions are: Latitude: 1 deg = 110.574 km. Longitude: 1 deg = 111.320*cos(latitude) km. So at 23 degrees, 1 degree of logitude is 110*cos(23/180*pi) = 101 ~= 100
@@ -108,6 +108,7 @@ load(file=paste0(local_data_dir,"/","contacts_fluscape_V1.rda"))
     long.lim2[1]-margin,long.lim2[2]+margin,lat.lim2[1]-margin,lat.lim2[2]+margin
   )
   gz_pop_raster <- crop(x1,ext)
+  saveRDS(gz_pop_raster, file = paste0(local_data_dir,"/data/","gz_pop_raster.rds"))
 
 #' Brings in the previously generated S matrix for called pop_S_mat_fluscape
   load("~/dbox/shares/me_jr_hm_dc_gravity/current/to_upload/pop_S_mat_fluscape.rda") # steven
@@ -143,10 +144,12 @@ if (!file.exists(fnLog)) {
 }
 
 # fit radiation model to previous existing instance of S matrix, pop_S_mat_fluscape
+# the input of tmp1 will only return default likelihood
 tmp1 <- fit.mobility.model(
         contacts_fluscape_V1,
         gz_pop_raster,
         Smat = pop_S_mat_fluscape,
+        noRepeats = 1,
         logfile = fnLog,
         optfun = fit.offset.radiation.optim,
         psToFit = c("offset"),
@@ -156,6 +159,19 @@ tmp1 <- fit.mobility.model(
         fdebug=TRUE,
         lognote = ""
     )
+
+# this input will run harriet.offset.radiation
+tmp2 <- fit.mobility.model( contacts_fluscape_V1,
+                            gz_pop_raster,        
+                            Smat = pop_S_mat_fluscape,        
+                            logfile=fnLog,        
+                            optfun = NULL,        
+                            psToFit = NULL,        
+                            psLB = NULL,        
+                            psUB = NULL,        
+                            datasubset="ALL",            
+                            fdebug=TRUE, 
+                            lognote="")
 
 
 #------------------ works up to here.... ---------------------#
