@@ -45,15 +45,227 @@ library(lazymcmc)
 load_all()
 library(fluscapeR)
 
+#' Change NAs for 0s in the population density and
+#' load the actual contacts and the large population density
+#' These lines shouldn't be in the main script
+gz_pop_raster <- readRDS("./data/gz_pop_raster.rds")
+zeromask <- is.na(as.matrix(gz_pop_raster[,,1]))
+gz_pop_raster[zeromask] <- 0
+load("./data/pop_S_mat_fluscape.rda") # S matrix
+load("./data/contacts_fluscape_V1.rda") # actual contact
+load("./data/contacts_V1_jittered_100m.rda") # jittered contact
+
 #' Temporary file debugging
 fdb <- FALSE
 
 #' Process the command line arguments for the log file
 # args <- commandArgs(trailingOnly = TRUE)
-jobType_opt <- c(1:6)
-datasubset_opt <- c("ALL", "RURAL", "URBAN", "ADULTS", "CHILDREN")
-CONTOPT_vec <- c("ACTUAL", "JITTERED")
-args <- c("./gravity_log_debug.csv", jobType[2], datasubset[1], 20, CONTOPT[1])
+#' jobType: 1, 2, 3, 4, 5, 6
+#' datasubset_opt: "ALL", "RURAL", "URBAN", "ADULTS", "CHILDREN"
+#' conts_opt: "ACTUAL", "JITTERED"
+
+reproduce.fit.mobility <- function(contact_data,
+                                   popgrid,
+                                   Smat,
+                                   fnLog = "./gravity_log_debug.csv",
+                                   jobType,
+                                   datasubset,
+                                   conts_opt,
+                                   noRepeats,
+                                   current_wd,
+                                   fdb = FALSE
+                                   ){
+  args <- c(fnLog, jobType, datasubset, noRepeats)
+  noargs <- length(args)
+
+  if (noargs == 4) {
+    args <- args
+  } else if (noargs == 0) {
+    fnLog <- "./gravity_log_debug.csv"
+    jobType <- 1
+    datasubset="ALL"
+    noreps <- 2
+    # conts_opt <- "JITTERED"
+  } else {
+    stop("In script mode, must be either 0 or 3 arguments")
+  }
+
+  if (!file.exists(fnLog)) {
+    dftmp <- make.data.df(nrow=0)
+    write.csv(dftmp,fnLog,row.names=FALSE)
+  }
+
+  fit <- if (jobType == 0) {
+    ## Get a specific likelihood value to check the univariate CIs
+    fit.mobility.model(
+      contact_data,
+      popgrid,
+      Smat = Smat,
+      logfile=fnLog,
+      noRepeats = noRepeats,
+      optfun = fit.gravity.poppower.optim.nowithinregion,
+      psToFit = c("destpower", "kernpower","offset"),
+      ## pJustLike = c(0.5141599, 2.661739,  -1.68),
+      pJustLike = NULL,
+      psLB = c(0.1,0.1,-3),
+      psUB = c(4,6,2),
+      datasubset=datasubset,
+      fdebug=fdb,
+      lognote=conts_opt
+    )
+    ## Get a specific likelihood value to check the univariate CIs
+    for (val in seq(from=-3,to=-0.3,by=0.1)) {
+      fit.mobility.model(
+        contact_data,
+        popgrid,
+        Smat = Smat,
+        logfile=fnLog,
+        noRepeats = noRepeats,
+        optfun = fit.gravity.poppower.optim.nowithinregion,
+        psToFit = c("destpower", "kernpower","offset"),
+        pJustLike = c(0.52592, 2.730,  val),
+        ## pJustLike = NULL,
+        psLB = c(0.1,0.1,-3),
+        psUB = c(4,6,2),
+        datasubset=datasubset,
+        fdebug=fdb,
+        lognote=conts_opt
+      )
+    }
+  } else if (jobType == 1) {
+    fit.mobility.model(
+      contact_data,
+      popgrid,
+      Smat = Smat,
+      logfile=fnLog,
+      noRepeats = noRepeats,
+      optfun = NULL,
+      psToFit = NULL,
+      psLB = NULL,
+      psUB = NULL,
+      datasubset=datasubset,
+      fdebug=fdb,
+      lognote=conts_opt
+    )
+  } else if (jobType == 2) {
+    fit.mobility.model(
+      contact_data,
+      popgrid,
+      Smat = Smat,
+      logfile = fnLog,
+      optfun = fit.offset.radiation.optim,
+      noRepeats = noRepeats,
+      psToFit = c("offset"),
+      psLB = c(1),
+      psUB = c(20*1000),
+      datasubset = datasubset,
+      fdebug=fdb,
+      lognote = conts_opt
+    )
+  } else if (jobType == 3) {
+    fit.mobility.model(
+      contact_data,
+      popgrid,
+      Smat = Smat,
+      logfile=fnLog,
+      noRepeats = noRepeats,
+      optfun = fit.gravity.poppower.optim.nowithinregion,
+      psToFit = c("destpower", "kernpower","offset"),
+      psLB = c(0.1,0.1,-3),
+      psUB = c(4,6,2),
+      datasubset=datasubset,
+      fdebug=fdb,
+      lognote= conts_opt
+    )
+  } else if (jobType == 4) {
+    fit.mobility.model(
+      contact_data,
+      popgrid,
+      Smat = Smat,
+      logfile=fnLog,
+      noRepeats = noRepeats,
+      optfun = fit.gravity.poppower.optim.nowithinregion,
+      psToFit = c("kernpower","offset"),
+      psLB = c(0.1,-3),
+      psUB = c(6,2),
+      datasubset=datasubset,
+      fdebug=fdb,
+      lognote= conts_opt
+    )
+  } else if (jobType == 5) {
+    fit.mobility.model(
+      contact_data,
+      popgrid,
+      Smat = Smat,
+      logfile=fnLog,
+      noRepeats = noRepeats,
+      optfun = fit.gravity.poppower.optim.nowithinregion,
+      psToFit = c("kernpower","destpower"),
+      psLB = c(0.1,0.1),
+      psUB = c(6,4),
+      datasubset=datasubset,
+      fdebug=fdb,
+      lognote= conts_opt
+    )
+  } else if (jobType == 6) {
+    fit.mobility.model(
+      contact_data,
+      popgrid,
+      logfile=fnLog,
+      noRepeats = noRepeats,
+      optfun = fit.gravity.poppower.optim.nowithinregion,
+      psToFit = c("kernpower"),
+      psLB = c(0.1),
+      psUB = c(6),
+      datasubset=datasubset,
+      fdebug=fdb,
+      lognote=conts_opt
+    )
+  } else {
+    stop("job type not known")
+  }
+
+return(fit)
+
+}
+
+fit_pure_radiation_all <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
+                                                 popgrid = gz_pop_raster,
+                                                 Smat = pop_S_mat_fluscape,
+                                                 jobType = 1,
+                                                 datasubset = "ALL",
+                                                 conts_opt = "ACTUAL",
+                                                 noRepeats = 1,
+                                                 current_wd = "./")
+
+fit_pure_radiation_rural <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
+                                                   popgrid = gz_pop_raster,
+                                                   Smat = pop_S_mat_fluscape,
+                                                   jobType = 1,
+                                                   datasubset = "RURAL",
+                                                   conts_opt = "ACTUAL",
+                                                   noRepeats = 1,
+                                                   current_wd = "./")
+
+fit_pure_radiation_child <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
+                                                   popgrid = gz_pop_raster,
+                                                   Smat = pop_S_mat_fluscape,
+                                                   jobType = 1,
+                                                   datasubset = "CHILDREN",
+                                                   conts_opt = "ACTUAL",
+                                                   noRepeats = 1,
+                                                   current_wd = "./")
+
+fit_offset_radiation_all <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
+                                                 popgrid = gz_pop_raster,
+                                                 Smat = pop_S_mat_fluscape,
+                                                 jobType = 2,
+                                                 datasubset = "ALL",
+                                                 conts_opt = "ACTUAL",
+                                                 noRepeats = 20,
+                                                 current_wd = "./")
+
+
 
 noargs <- length(args)
 if (noargs == 5) {
@@ -85,7 +297,7 @@ gz_pop_raster <- readRDS("./data/gz_pop_raster.rds")
 zeromask <- is.na(as.matrix(gz_pop_raster[,,1]))
 gz_pop_raster[zeromask] <- 0
 load("./data/pop_S_mat_fluscape.rda") # S matrix
-load("./data/contacts_fluscape_V1.rda") # actual contact 
+load("./data/contacts_fluscape_V1.rda") # actual contact
 load("./data/contacts_V1_jittered_100m.rda") # jittered contact
 
 #' Select contacts option
