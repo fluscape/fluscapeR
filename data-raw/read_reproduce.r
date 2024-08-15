@@ -265,8 +265,28 @@ fit_offset_radiation_all <- reproduce.fit.mobility(contact_data = contacts_flusc
                                                  noRepeats = 20,
                                                  current_wd = "./")
 
+fit_destKerOffset_all <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
+                                                   popgrid = gz_pop_raster,
+                                                   Smat = pop_S_mat_fluscape,
+                                                   jobType = 3,
+                                                   datasubset = "ALL",
+                                                   conts_opt = "ACTUAL",
+                                                   noRepeats = 20,
+                                                   current_wd = "./") 
+
+fit_destKerOffset_rural <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
+                                                popgrid = gz_pop_raster,
+                                                Smat = pop_S_mat_fluscape,
+                                                jobType = 3,
+                                                datasubset = "ALL",
+                                                conts_opt = "RURAL",
+                                                noRepeats = 20,
+                                                current_wd = "./") 
 
 
+
+
+############### Below is not used #################
 noargs <- length(args)
 if (noargs == 5) {
     fnLog <- trimws(args[1])
