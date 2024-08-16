@@ -247,11 +247,29 @@ fit_pure_radiation_rural <- reproduce.fit.mobility(contact_data = contacts_flusc
                                                    noRepeats = 1,
                                                    current_wd = "./")
 
+fit_pure_radiation_urban <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
+                                                   popgrid = gz_pop_raster,
+                                                   Smat = pop_S_mat_fluscape,
+                                                   jobType = 1,
+                                                   datasubset = "URBAN",
+                                                   conts_opt = "ACTUAL",
+                                                   noRepeats = 1,
+                                                   current_wd = "./")
+
 fit_pure_radiation_child <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
                                                    popgrid = gz_pop_raster,
                                                    Smat = pop_S_mat_fluscape,
                                                    jobType = 1,
                                                    datasubset = "CHILDREN",
+                                                   conts_opt = "ACTUAL",
+                                                   noRepeats = 1,
+                                                   current_wd = "./")
+
+fit_pure_radiation_adult <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
+                                                   popgrid = gz_pop_raster,
+                                                   Smat = pop_S_mat_fluscape,
+                                                   jobType = 1,
+                                                   datasubset = "ADULTS",
                                                    conts_opt = "ACTUAL",
                                                    noRepeats = 1,
                                                    current_wd = "./")
@@ -265,6 +283,15 @@ fit_offset_radiation_all <- reproduce.fit.mobility(contact_data = contacts_flusc
                                                  noRepeats = 20,
                                                  current_wd = "./")
 
+fit_offset_radiation_urban <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
+                                                   popgrid = gz_pop_raster,
+                                                   Smat = pop_S_mat_fluscape,
+                                                   jobType = 2,
+                                                   datasubset = "URBAN",
+                                                   conts_opt = "ACTUAL",
+                                                   noRepeats = 20,
+                                                   current_wd = "./")
+
 fit_destKerOffset_all <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
                                                    popgrid = gz_pop_raster,
                                                    Smat = pop_S_mat_fluscape,
@@ -272,19 +299,70 @@ fit_destKerOffset_all <- reproduce.fit.mobility(contact_data = contacts_fluscape
                                                    datasubset = "ALL",
                                                    conts_opt = "ACTUAL",
                                                    noRepeats = 20,
-                                                   current_wd = "./") 
+                                                   current_wd = "./")
 
-fit_destKerOffset_rural <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
+fit_destKerOffset_urban <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
                                                 popgrid = gz_pop_raster,
                                                 Smat = pop_S_mat_fluscape,
                                                 jobType = 3,
-                                                datasubset = "ALL",
-                                                conts_opt = "RURAL",
+                                                datasubset = "URBAN",
+                                                conts_opt = "ACTUAL",
                                                 noRepeats = 20,
-                                                current_wd = "./") 
+                                                current_wd = "./")
 
+fit_kerOffset_all <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
+                                                popgrid = gz_pop_raster,
+                                                Smat = pop_S_mat_fluscape,
+                                                jobType = 4,
+                                                datasubset = "ALL",
+                                                conts_opt = "ACTUAL",
+                                                noRepeats = 20,
+                                                current_wd = "./")
 
+fit_kerOffset_urban <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
+                                            popgrid = gz_pop_raster,
+                                            Smat = pop_S_mat_fluscape,
+                                            jobType = 4,
+                                            datasubset = "URBAN",
+                                            conts_opt = "ACTUAL",
+                                            noRepeats = 20,
+                                            current_wd = "./")
 
+fit_destKer_all <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
+                                            popgrid = gz_pop_raster,
+                                            Smat = pop_S_mat_fluscape,
+                                            jobType = 5,
+                                            datasubset = "ALL",
+                                            conts_opt = "ACTUAL",
+                                            noRepeats = 20,
+                                            current_wd = "./")
+
+fit_destKer_urban <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
+                                          popgrid = gz_pop_raster,
+                                          Smat = pop_S_mat_fluscape,
+                                          jobType = 5,
+                                          datasubset = "URBAN",
+                                          conts_opt = "ACTUAL",
+                                          noRepeats = 20,
+                                          current_wd = "./")
+
+fit_ker_all <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
+                                          popgrid = gz_pop_raster,
+                                          Smat = pop_S_mat_fluscape,
+                                          jobType = 6,
+                                          datasubset = "ALL",
+                                          conts_opt = "ACTUAL",
+                                          noRepeats = 20,
+                                          current_wd = "./")
+
+fit_ker_urban <- reproduce.fit.mobility(contact_data = contacts_fluscape_V1,
+                                      popgrid = gz_pop_raster,
+                                      Smat = pop_S_mat_fluscape,
+                                      jobType = 6,
+                                      datasubset = "URBAN",
+                                      conts_opt = "ACTUAL",
+                                      noRepeats = 20,
+                                      current_wd = "./")
 
 ############### Below is not used #################
 noargs <- length(args)
