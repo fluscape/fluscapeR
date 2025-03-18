@@ -13,12 +13,11 @@ Part of the analysis involves the creation and then use of a large binary object
 ## Tasks
 
 To dos
-- [ ] figure out how Jon's code works to make the S matrix and rerun a new calculation that is consistent with the existing binary S matrix
-- [ ] based on read_et_al_example.r write a vingette that could remake key numbers from the parameter esitmation table but would be very slow and messy
-- [ ] check key numbers using that vingette for jittered and ppii versions of the data 
-- [ ] put the code to actually reproduce the table into the project github, and remake the table
-- [ ] remake the table fromt he jittered version of the data 
-- [ ] remake one figure in the paper
+- [x] figure out how Jon's code works to make the S matrix and rerun a new calculation that is consistent with the existing binary S matrix
+- [x] based on read_et_al_example.r write a vingette that could remake key numbers from the parameter esitmation table but would be very slow and messy
+- [x] check key numbers using that vingette for jittered and ppii versions of the data 
+- [x] put the code to actually reproduce the table into the project github, and remake the table
+- [x] remake the table from the jittered version of the data 
 
 Possible To Dos
 - [ ] review literature for "gravity model" "radiation model" and movement ecology of SARS-CoV-2

@@ -16,7 +16,6 @@ rm(list=ls(all=TRUE))
 library(devtools)
 library(raster)
 library(tidyverse)
-library(raster)
 
 load_all()
 
