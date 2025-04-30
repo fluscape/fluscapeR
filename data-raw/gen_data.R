@@ -148,7 +148,7 @@ tmp1 <- fit.mobility.model(
         gz_pop_raster,
         Smat = pop_S_mat_fluscape,
         logfile = fnLog,
-        optfun = fit.offset.radiation.optim,
+        optfun = NULL,
         psToFit = c("offset"),
         psLB = c(1),
         psUB = c(20*1000),
