@@ -1,0 +1,65 @@
+#!/bin/bash
+echo hello world
+CONTOPTA=ACTUAL
+CONTOPTB=JITTERED
+FILENAME=estimates_log_20231114.csv
+Rscript read_reproduce.r $FILENAME 1 ALL 1 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 1 RURAL 1 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 1 URBAN 1 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 1 ADULTS 1 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 1 CHILDREN 1 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 2 ALL 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 2 RURAL 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 2 URBAN 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 2 ADULTS 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 2 CHILDREN 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 3 ALL 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 3 RURAL 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 3 URBAN 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 3 ADULTS 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 3 CHILDREN 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 4 ALL 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 4 RURAL 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 4 URBAN 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 4 ADULTS 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 4 CHILDREN 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 5 ALL 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 5 RURAL 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 5 URBAN 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 5 ADULTS 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 5 CHILDREN 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 6 ALL 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 6 RURAL 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 6 URBAN 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 6 ADULTS 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 6 CHILDREN 20 $CONTOPTA &
+Rscript read_reproduce.r $FILENAME 1 ALL 1 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 1 RURAL 1 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 1 URBAN 1 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 1 ADULTS 1 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 1 CHILDREN 1 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 2 ALL 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 2 RURAL 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 2 URBAN 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 2 ADULTS 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 2 CHILDREN 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 3 ALL 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 3 RURAL 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 3 URBAN 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 3 ADULTS 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 3 CHILDREN 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 4 ALL 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 4 RURAL 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 4 URBAN 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 4 ADULTS 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 4 CHILDREN 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 5 ALL 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 5 RURAL 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 5 URBAN 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 5 ADULTS 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 5 CHILDREN 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 6 ALL 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 6 RURAL 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 6 URBAN 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 6 ADULTS 20 $CONTOPTB &
+Rscript read_reproduce.r $FILENAME 6 CHILDREN 20 $CONTOPTB &

@@ -42,3 +42,5 @@ vignettes/*.pdf
 *~
 .project
 inst/doc
+./data/pop_S_mat_fluscape.rda
+
