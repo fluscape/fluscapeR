@@ -1,4 +1,4 @@
-# Gravity paper 2024
+# Gravity paper reboot
 
 ## Key resources
 
