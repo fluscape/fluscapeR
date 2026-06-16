@@ -23,7 +23,6 @@ load_all()
 local_data_dir <- "~/tmp" # Steven
 local_data_dir <- "D:/tmp" # Jon
 local_data_dir <- "./" # Vivi
-fluscape_top_dir <- "../fluscape/"
 fluscape_top_dir <- "../fluscape/" # Vivi
 
 source(paste0(fluscape_top_dir,"source/R/mob_utility_private.r"))
@@ -31,7 +30,7 @@ source(paste0(fluscape_top_dir,"source/R/fluscape_copy_stevensRfunctions.R"))
 source(paste0(fluscape_top_dir,"source/R/GeneralUtility.r"))
 
 #' Load the snapshot of landscan saved into the fluscape directory
- x1 <- fsc.load.wide.raster(fluscapetopdir=fluscape_top_dir)
+x1 <- fsc.load.wide.raster(fluscapetopdir=fluscape_top_dir)
 
 #' This is not yet saved as a package data object, until I see how it get used later
 
@@ -42,12 +41,12 @@ source(paste0(fluscape_top_dir,"source/R/GeneralUtility.r"))
 #' use to test the methods.
 
 #' Load the fluscape data sets, and trim to visit 1
-  participants <- load_particpant_data_long(topdir = fluscape_top_dir)
-  participants <- participants[participants$VISIT==1,]
-  participants$pid = paste(participants$LOC_ID, participants$HH_ID, participants$PARTICIPANT_ID, sep="_")
-  households <- load_hh_data_long(topdir = fluscape_top_dir)
-  # recreate locations information from households
-  locations <- unique( households[,c("LOC_ID","LOC_Lat","LOC_Long","URBAN","DIST_FRM_GZ")] )
+participants <- load_participant_data_long(topdir = fluscape_top_dir)
+participants <- participants[participants$VISIT==1,]
+participants$pid = paste(participants$LOC_ID, participants$HH_ID, participants$PARTICIPANT_ID, sep="_")
+households <- load_hh_data_long(topdir = fluscape_top_dir)
+# recreate locations information from households
+locations <- unique( households[,c("LOC_ID","LOC_Lat","LOC_Long","URBAN","DIST_FRM_GZ")] )
 
 #' Set area boundary
   long.lim = c( 112.8, 114.2 )
