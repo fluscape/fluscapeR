@@ -110,6 +110,7 @@ load(file=paste0(local_data_dir,"contacts_fluscape_V1.rda"))
 
 #' Brings in the previously generated S matrix for called pop_S_mat_fluscape
   load("~/dbox/shares/me_jr_hm_dc_gravity/current/to_upload/pop_S_mat_fluscape.rda") # steven
+  load("~/tmp/pop_S_mat_fluscape.rda") # steven
   load("G:/OneDrive - Imperial College London/Postdoc/Fluscape/fluscapeR/fluscapeR/pop_S_mat_fluscape.rda") # vivi
   load("D:/tmp/pop_S_mat_fluscape.rda") # jon
   # transfer this binary to jons machine
@@ -117,10 +118,14 @@ load(file=paste0(local_data_dir,"contacts_fluscape_V1.rda"))
 
 #' Firstly, we need to check that we can run this just for a small example. This test will also be
 #' repeated in one of the package vingettes.
-  popsize_vector = values(popmatrix)
+  popsize_vector = values(gz_pop_raster)
   D=ncell(popsize_vector)
-  gz_pop_raster_agg <- aggregate(gz_pop_raster,popsize_vector,D,10)
-  pop_S_mat_fluscape_agg <- mob_calc_S_mat(gz_pop_raster_agg)
+  gz_pop_raster_agg <- aggregate(gz_pop_raster,fact=10,fun=sum)
+  
+  ## Up to here
+  pop_S_mat_fluscape_agg <- mob_calc_S_mat(gz_pop_raster_agg,popsize_vector,D=10)
+  
+  
   dim(pop_S_mat_fluscape_agg)
 
 #' Now I need to load up the pre-calculated object and compare it with the size of this then
