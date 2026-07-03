@@ -23,6 +23,7 @@ load_all()
 local_data_dir <- "~/tmp" # Steven
 local_data_dir <- "D:/tmp" # Jon
 local_data_dir <- "./" # Vivi
+
 fluscape_top_dir <- "../fluscape/" # Vivi
 
 source(paste0(fluscape_top_dir,"source/R/mob_utility_private.r"))
@@ -69,52 +70,53 @@ load(file=paste0(local_data_dir,"contacts_fluscape_V1.rda"))
 #' Generate actual potentially identifiable data and main jittered data
 #' The approximate conversions are: Latitude: 1 deg = 110.574 km. Longitude: 1 deg = 111.320*cos(latitude) km. So at 23 degrees, 1 degree of logitude is 110*cos(23/180*pi) = 101 ~= 100
 #' SO a jitter error of 100 metres is a jitter of 0.001
-  contacts_fluscape_V1 <- mob_generate_contacts_data_from_scratch(
-    locations,
-    households,
-    participants,
-    jitterxy=FALSE,
-    topdir=fluscape_top_dir
-  )
-  contacts_jit <- mob_generate_contacts_data_from_scratch(
-    locations,
-    households,
-    participants,
-    jitterxy=TRUE,
-    jitter_error=0.001,
-    x1=x1,
-    topdir=fluscape_top_dir
-  )
+contacts_fluscape_V1 <- mob_generate_contacts_data_from_scratch(
+  locations,
+  households,
+  participants,
+  jitterxy=FALSE,
+  topdir=fluscape_top_dir
+)
+contacts_jit <- mob_generate_contacts_data_from_scratch(
+  locations,
+  households,
+  participants,
+  jitterxy=TRUE,
+  jitter_error=0.001,
+  x1=x1,
+  topdir=fluscape_top_dir
+)
+
 # assess the jittering
-  hist(contacts_fluscape_V1$lat,breaks=c(0,seq(23,24,0.1),40))
-  hist(contacts_jit$lat-contacts_fluscape_V1$lat)
-  plot( contacts_fluscape_V1$HH_Long, contacts_fluscape_V1$HH_Lat, pch=16, cex=.3, col="blue", xlim=c(113.5,113.6), ylim=c(23.2,23.3))
-  points( contacts_jit$HH_Long, contacts_jit$HH_Lat, pch=16, cex=.3, col="red")
+hist(contacts_fluscape_V1$lat,breaks=c(0,seq(23,24,0.1),40))
+hist(contacts_jit$lat-contacts_fluscape_V1$lat)
+plot( contacts_fluscape_V1$HH_Long, contacts_fluscape_V1$HH_Lat, pch=16, cex=.3, col="blue", xlim=c(113.5,113.6), ylim=c(23.2,23.3))
+points( contacts_jit$HH_Long, contacts_jit$HH_Lat, pch=16, cex=.3, col="red")
 
 #' rename and write the potentially personally identifiable version to the local temp directory
-  save(contacts_fluscape_V1,file=paste0(local_data_dir,"/","contacts_fluscape_V1.rda"))
+save(contacts_fluscape_V1,file=paste0(local_data_dir,"/","contacts_fluscape_V1.rda"))
 
 #' Rename and use 100m jittered data
-  contacts_V1_jittered_100m <- contacts_jit
-  usethis::use_data(contacts_V1_jittered_100m, overwrite = TRUE)
+contacts_V1_jittered_100m <- contacts_jit
+## usethis::use_data(contacts_V1_jittered_100m, overwrite = TRUE)
 
 #' ## Prep for making the S matrix
-  lat.lim2 <- as.vector(c(22.11667,24.50833))
-  long.lim2 <- as.vector(c(112.2667,114.8000))
-  margin <- 0
-  ext <- extent(
-    long.lim2[1]-margin,long.lim2[2]+margin,lat.lim2[1]-margin,lat.lim2[2]+margin
-  )
-  gz_pop_raster <- crop(x1,ext)
-  saveRDS(gz_pop_raster, file = paste0(local_data_dir,"/data/","gz_pop_raster.rds"))
+lat.lim2 <- as.vector(c(22.11667,24.50833))
+long.lim2 <- as.vector(c(112.2667,114.8000))
+margin <- 0
+ext <- extent(
+  long.lim2[1]-margin,long.lim2[2]+margin,lat.lim2[1]-margin,lat.lim2[2]+margin
+)
+gz_pop_raster <- crop(x1,ext)
+saveRDS(gz_pop_raster, file = paste0(local_data_dir,"/data/","gz_pop_raster.rds"))
 
 #' Brings in the previously generated S matrix for called pop_S_mat_fluscape
-  load("~/dbox/shares/me_jr_hm_dc_gravity/current/to_upload/pop_S_mat_fluscape.rda") # steven
-  load("~/tmp/pop_S_mat_fluscape.rda") # steven
-  load("G:/OneDrive - Imperial College London/Postdoc/Fluscape/fluscapeR/fluscapeR/pop_S_mat_fluscape.rda") # vivi
-  load("D:/tmp/pop_S_mat_fluscape.rda") # jon
-  # transfer this binary to jons machine
-  str(pop_S_mat_fluscape)
+load("~/dbox/shares/me_jr_hm_dc_gravity/current/to_upload/pop_S_mat_fluscape.rda") # steven
+load("~/tmp/pop_S_mat_fluscape.rda") # steven
+load("G:/OneDrive - Imperial College London/Postdoc/Fluscape/fluscapeR/fluscapeR/pop_S_mat_fluscape.rda") # vivi
+load("D:/tmp/pop_S_mat_fluscape.rda") # jon
+# transfer this binary to jons machine
+str(pop_S_mat_fluscape)
 
 #' Firstly, we need to check that we can run this just for a small example. This test will also be
 #' repeated in one of the package vingettes.
