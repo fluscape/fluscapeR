@@ -17,7 +17,7 @@ load_all()
 
 #' Assumes that the soure package fluscapeR is next to main private fluscape repo
 #' and that the working directory is the fluscapeR directory
-local_data_dir <- "./"
+local_data_dir <- "~/tmp"
 fluscape_top_dir <- "../fluscape/" 
 
 source(paste0(fluscape_top_dir,"source/R/mob_utility_private.r"))
@@ -34,7 +34,7 @@ x1 <- fsc.load.wide.raster(fluscapetopdir=fluscape_top_dir)
 #' use to test the methods.
 
 #' Load the fluscape data sets, and trim to visit 1
-participants <- load_particpant_data_long(topdir = fluscape_top_dir)
+participants <- load_participant_data_long(topdir = fluscape_top_dir)
 participants <- participants[participants$VISIT==1,]
 participants$pid = paste(participants$LOC_ID, participants$HH_ID, participants$PARTICIPANT_ID, sep="_")
 households <- load_hh_data_long(topdir = fluscape_top_dir)

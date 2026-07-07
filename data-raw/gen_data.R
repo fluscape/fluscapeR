@@ -108,7 +108,7 @@ ext <- extent(
   long.lim2[1]-margin,long.lim2[2]+margin,lat.lim2[1]-margin,lat.lim2[2]+margin
 )
 gz_pop_raster <- crop(x1,ext)
-saveRDS(gz_pop_raster, file = paste0(local_data_dir,"/data/","gz_pop_raster.rds"))
+saveRDS(gz_pop_raster, file = paste0(local_data_dir,"gz_pop_raster.rds"))
 
 #' Brings in the previously generated S matrix for called pop_S_mat_fluscape
 load("~/dbox/shares/me_jr_hm_dc_gravity/current/to_upload/pop_S_mat_fluscape.rda") # steven
@@ -120,15 +120,15 @@ str(pop_S_mat_fluscape)
 
 #' Firstly, we need to check that we can run this just for a small example. This test will also be
 #' repeated in one of the package vingettes.
-  popsize_vector = values(gz_pop_raster)
-  D=ncell(popsize_vector)
-  gz_pop_raster_agg <- aggregate(gz_pop_raster,fact=10,fun=sum)
+popsize_vector = values(gz_pop_raster)
+D=ncell(popsize_vector)
+gz_pop_raster_agg <- aggregate(gz_pop_raster,fact=10,fun=sum)
   
-  ## Up to here
-  pop_S_mat_fluscape_agg <- mob_calc_S_mat(gz_pop_raster_agg,popsize_vector,D=10)
+## Up to here
+pop_S_mat_fluscape_agg <- mob_calc_S_mat(gz_pop_raster_agg,popsize_vector,D=10)
   
   
-  dim(pop_S_mat_fluscape_agg)
+dim(pop_S_mat_fluscape_agg)
 
 #' Now I need to load up the pre-calculated object and compare it with the size of this then
 #' find the right size of matrix so I can check the radiation model runs.
@@ -141,7 +141,6 @@ str(pop_S_mat_fluscape)
 # data
 
 # Up to here XXXX needs to work below
-
 fnLog <- paste0(local_data_dir,"/gravity_log_debug.csv")
 if (!file.exists(fnLog)) {
     dftmp <- make.data.df(nrow=0)
