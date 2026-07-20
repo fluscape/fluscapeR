@@ -1,5 +1,6 @@
 ## This file is for generating sample S matrix for radiation model by aggregating the original raster x2
 
+#' @importFrom utils txtProgressBar setTxtProgressBar
 generate.agg.Smatrix <- function(contacts,
                                  raster_object,
                                  agg_num

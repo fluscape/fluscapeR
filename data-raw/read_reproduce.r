@@ -48,7 +48,7 @@ library(fluscapeR)
 #' Change NAs for 0s in the population density and
 #' load the actual contacts and the large population density
 #' These lines shouldn't be in the main script
-gz_pop_raster <- readRDS("./data/gz_pop_raster.rds")
+gz_pop_raster <- readRDS("./inst/extdata/gz_pop_raster.rds")
 zeromask <- is.na(as.matrix(gz_pop_raster[,,1]))
 gz_pop_raster[zeromask] <- 0
 load("./data/pop_S_mat_fluscape.rda") # S matrix
@@ -391,7 +391,7 @@ if (!file.exists(fnLog)) {
 #' Change NAs for 0s in the population density and
 #' load the actual contacts and the large population density
 #' These lines shouldn't be in the main script
-gz_pop_raster <- readRDS("./data/gz_pop_raster.rds")
+gz_pop_raster <- readRDS("./inst/extdata/gz_pop_raster.rds")
 zeromask <- is.na(as.matrix(gz_pop_raster[,,1]))
 gz_pop_raster[zeromask] <- 0
 load("./data/pop_S_mat_fluscape.rda") # S matrix

@@ -18,6 +18,9 @@
 ## (at your option) any later version.
 
 #' @import raster
+#' @importFrom stats runif optimise uniroot
+#' @importFrom utils read.csv write.table
+#' @importFrom optimx optimx
 fit.mobility.model <- function(contacts,
                                popgrid,
                                sd=928734924,
@@ -36,7 +39,7 @@ fit.mobility.model <- function(contacts,
 
     ## Check some preconditions for the function arguments
     if (is.null(optfun) && is.null(Smat)) {
-        error("S matrix must be specified for the radiation model")
+        stop("S matrix must be specified for the radiation model")
     }
     ## if (psToFit !%in% c("Power","Offset","DestPower")) {
     ##     error("Parameters must be one of: Power, Offset, DestPower")
@@ -610,8 +613,6 @@ mob_calc_S_mat_first <- function(popmatrix, A=1) {
   #  S -- matrix of S_ij, where rows correspond
   # to originindices, and columns to destinations.
 
-  require("raster")
-
   ## Re engineer arguments
   popsize_vector = values(popmatrix)
   D=ncell(popsize_vector)
@@ -644,7 +645,7 @@ mob_calc_S_mat_first <- function(popmatrix, A=1) {
     popsize = popsize[neworder]
     destcells = destcells[neworder]
 
-    S.ij = vector(len=D*A)
+    S.ij = vector(length = D*A)
     rollingsum_ind = 1
     rollingsum = 0
     uni_dist = unique(d.ij)
@@ -759,9 +760,6 @@ gravy.gen.observations <- function(
                                    destindices,
                                    noorig,
                                    nodest) {
-
-    ## Declare required libraries
-    require(raster)
 
     ## make a matrix containing the observed counts of contact occuring
     ## in destination cell by participants coming from origin cell
@@ -932,6 +930,7 @@ poppower_model <- function(kernpower,
 
 }
 
+#' @importFrom stats dmultinom
 gravy.calc.lnlike.nowithinregion.harriet <- function( dataMatrix, model, noorig , originindices, destindices) {
     ## Inputs:
   #   dataMatrix (obs.tab)   matrix of observed events in each dest cell, row=origin, col=destination cells.
@@ -959,6 +958,7 @@ gravy.calc.lnlike.nowithinregion.harriet <- function( dataMatrix, model, noorig 
   return( lnlike )
 }
 
+#' @importFrom utils txtProgressBar setTxtProgressBar
 mob_calc_S_mat <- function(popmatrix,popsize_vector,D,A=1) {
   # Faster function to calculate S_ij, the sum of population densities
   # within radius r_ij,
@@ -1000,7 +1000,7 @@ mob_calc_S_mat <- function(popmatrix,popsize_vector,D,A=1) {
     popsize = popsize[neworder]
     destcells = destcells[neworder]
 
-    S.ij = vector(len=D*A)
+    S.ij = vector(length = D*A)
     rollingsum_ind = 1
     rollingsum = 0
     uni_dist = unique(d.ij)
