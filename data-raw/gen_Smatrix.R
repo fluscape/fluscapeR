@@ -17,7 +17,7 @@ load_all()
 
 #' Assumes that the soure package fluscapeR is next to main private fluscape repo
 #' and that the working directory is the fluscapeR directory
-local_data_dir <- "~/tmp"
+local_data_dir <- "~/tmp/gravity"
 fluscape_top_dir <- "../fluscape/" 
 
 source(paste0(fluscape_top_dir,"source/R/mob_utility_private.r"))
@@ -46,7 +46,7 @@ long.lim = c( 112.8, 114.2 )
 lat.lim = c( 22.6, 24.0 )
 
 #' Load the actual contact data
-load(file=paste0(local_data_dir,"/data/contacts_fluscape_V1.rda"))
+## load(file=paste0(local_data_dir,"/data/contacts_fluscape_V1.rda"))
 
 #' Generate actual potentially identifiable data and main jittered data
 #' The approximate conversions are: Latitude: 1 deg = 110.574 km. Longitude: 1 deg = 111.320*cos(latitude) km. So at 23 degrees, 1 degree of logitude is 110*cos(23/180*pi) = 101 ~= 100
@@ -69,7 +69,7 @@ points( contacts_jit$HH_Long, contacts_jit$HH_Lat, pch=16, cex=.3, col="red")
 
 #' Rename and use 100m jittered data
 contacts_V1_jittered_100m <- contacts_jit
-usethis::use_data(contacts_V1_jittered_100m, overwrite = TRUE)
+## usethis::use_data(contacts_V1_jittered_100m, overwrite = TRUE)
 
 ############# S martix ###########
 #' Prepare for making S matrix
@@ -100,7 +100,7 @@ ext2 <- extent(
   long.lim2[1]-margin,long.lim2[2]+margin,lat.lim2[1]-margin,lat.lim2[2]+margin
 )
 gz_pop_raster <- crop(x1,ext2)
-saveRDS(gz_pop_raster, file = paste0(local_data_dir,"/inst/extdata/","gz_pop_raster.rds"))
+## saveRDS(gz_pop_raster, file = paste0(local_data_dir,"/inst/extdata/","gz_pop_raster.rds"))
 
 #' Generating S matrix for radiation model will take very long time (~ a week).
 #' For people who want to run the models by themselves, instead of generating full size
@@ -108,11 +108,10 @@ saveRDS(gz_pop_raster, file = paste0(local_data_dir,"/inst/extdata/","gz_pop_ras
 #' Use agg_num to adjust the size - larger agg_num, smaller size
 #' If agg_num = 0, it will calculate based on the full size of the data.
 
-S.raiation.agg10 <- generate.agg.Smatrix(contacts_fluscape_V1, x2, 10)
-S.raiation.agg5 <- generate.agg.Smatrix(contacts_fluscape_V1, x2, 5)
-load("./data/pop_S_mat_fluscape.rda")
+S.radiation.agg10 <- generate.agg.Smatrix(contacts_fluscape_V1, x2, 10)
+S.radiation.agg5 <- generate.agg.Smatrix(contacts_fluscape_V1, x2, 5)
 
-# S.raiation.full <- generate.agg.Smatrix(contacts_fluscape_V1, x2, 0)
+S.raiation.full <- generate.agg.Smatrix(contacts_fluscape_V1, x2, 0)
 
 #' Check that the gravity model produces sensible results and try to calculate the likelihood of the
 #' data
@@ -126,9 +125,9 @@ if (!file.exists(fnLog)) {
 #' Fit radiation model to sample S matrix and actual S matrix 
 fit.sampleS10 <- fit.mobility.model(
   contacts = contacts_fluscape_V1,
-  popgrid = S.raiation.agg10$popgrid,
+  popgrid = S.radiation.agg10$popgrid,
   noRepeats = 3,
-  Smat = S.raiation.agg10$S,
+  Smat = S.radiation.agg10$S,
   logfile=fnLog, 
   optfun = NULL,        
   psToFit = NULL,        
@@ -136,13 +135,14 @@ fit.sampleS10 <- fit.mobility.model(
   psUB = NULL, 
   datasubset = "ALL",
   fdebug=TRUE,
-  lognote = ""
+  lognote = "S10"
 )
 
 fit.sampleS5 <- fit.mobility.model(
   contacts = contacts_fluscape_V1,
-  popgrid = S.raiation.agg5$popgrid,
-  Smat = S.raiation.agg5$S,
+  popgrid = S.radiation.agg5$popgrid,
+  Smat = S.radiation.agg5$S,
+  noRepeats = 3,
   logfile = fnLog,
   optfun = NULL,        
   psToFit = NULL,        
@@ -150,12 +150,14 @@ fit.sampleS5 <- fit.mobility.model(
   psUB = NULL, 
   datasubset = "ALL",
   fdebug=TRUE,
-  lognote = ""
+  lognote = "S5"
 )
 
+load((paste0(local_data_dir,"/pop_S_mat_fluscape.rda")))
 fit.fullS <- fit.mobility.model(
   contacts = contacts_fluscape_V1,
   popgrid = gz_pop_raster,
+  noRepeats = 3,
   Smat = pop_S_mat_fluscape,
   logfile=fnLog,        
   optfun = NULL,        
@@ -164,11 +166,19 @@ fit.fullS <- fit.mobility.model(
   psUB = NULL,        
   datasubset="ALL",            
   fdebug=TRUE, 
-  lognote=""
+  lognote="SF"
 )
 
 
+
+
+
+
+
+
+
 ##### The below code is incomplete - ignore it #####
+
 #' Generate a gravity model
 # faster non-zero destination indices calculation:
 tmp = getValues(x2)
@@ -231,6 +241,3 @@ for (i in 1:noorig) {
   setTxtProgressBar(pb,i)
 }
 close(pb)
-
-
-
