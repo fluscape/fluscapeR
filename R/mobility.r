@@ -3,7 +3,8 @@
 #' @importFrom utils txtProgressBar setTxtProgressBar
 generate.agg.Smatrix <- function(contacts,
                                  raster_object,
-                                 agg_num
+                                 agg_num,
+                                 vectorized = FALSE
                                  ){
   # remove NA values of longitude and latitude
   contacts_small <- contacts[!is.na(contacts$long) | !is.na(contacts$lat) | !is.na(contacts$HH_Long) | !is.na(contacts$HH_Lat),]
@@ -57,19 +58,49 @@ generate.agg.Smatrix <- function(contacts,
   # Warning, this is slow and takes a long time.
   # Save to disk after generation for future use.
   S <- matrix(nrow=noorig, ncol=nodest )
-  for (i in 1:noorig) {
-    print(paste(i,"/",noorig))
-    dist <- distances[i, ]
-    pb <- txtProgressBar(min = 0, max = nodest, style = 3)
-    for (j in 1:nodest) {
-      within_d <- which(dist<=dist[j])
-      radcell <- destindices$cell[within_d] # all destination cells within radius dist
-      S[i,j] <- sum(raster::extract(x,radcell) )
-      setTxtProgressBar(pb, j )
-      close(pb)
+
+  if (!vectorized) {
+
+    # Original O(noorig * nodest^2) implementation, kept as the default so
+    # behaviour is unchanged unless vectorized=TRUE is requested explicitly.
+    for (i in 1:noorig) {
+      print(paste(i,"/",noorig))
+      dist <- distances[i, ]
+      pb <- txtProgressBar(min = 0, max = nodest, style = 3)
+      for (j in 1:nodest) {
+        within_d <- which(dist<=dist[j])
+        radcell <- destindices$cell[within_d] # all destination cells within radius dist
+        S[i,j] <- sum(raster::extract(x,radcell) )
+        setTxtProgressBar(pb, j )
+        close(pb)
+      }
     }
+
+  } else {
+
+    # Vectorized implementation: for a fixed origin, S[i,j] is the sum of
+    # destination population over all destinations within dist[j] of that
+    # origin. Sorting destinations by distance and taking a cumulative sum
+    # gives the same quantity in O(nodest log nodest) instead of
+    # O(nodest^2), and avoids repeated raster::extract() calls in the inner
+    # loop. Ties in distance are handled with rank(..., ties.method="max"),
+    # which gives, for each j, the count of destinations with
+    # dist <= dist[j] - exactly the cumsum index needed.
+    popvals <- as.numeric(raster::extract(x, destindices$cells))
+
+    pb <- txtProgressBar(min = 0, max = noorig, initial = 0)
+    for (i in 1:noorig) {
+      dist <- distances[i, ]
+      ord <- order(dist)
+      csum <- cumsum(popvals[ord])
+      r <- rank(dist, ties.method = "max")
+      S[i, ] <- csum[r]
+      setTxtProgressBar(pb, i)
+    }
+    close(pb)
+
   }
-   
+
   agg_objects <- list(S = S,
                       popgrid = x)
   return (agg_objects)

@@ -2,3 +2,4 @@
 ^\.Rproj\.user$
 ^.project
 ^data-raw$
+^\.claude$
