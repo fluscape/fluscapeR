@@ -7,6 +7,31 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+<!--
+Developing this vignette:
+
+1. Load your in-development code, not an installed copy:
+     devtools::load_all()
+2. Preview/knit against that dev-loaded code with devtools::build_rmd(),
+   not a plain "Knit"/"Render" button or raw rmarkdown::render():
+     devtools::build_rmd("vignettes/reproduce-mobility-ms.Rmd")
+   build_rmd() knits against whatever load_all() currently has loaded and
+   builds in a temp copy, so it won't leave stray .html/.md files here for
+   you to accidentally commit. A bare library(fluscapeR) call, or hitting
+   an IDE's Knit button directly, may instead use the last *installed*
+   version and silently ignore your edits -- some IDEs (confirmed for
+   RStudio; untested for VS Code) spawn a fresh R session for Knit, which
+   won't see your load_all() state at all.
+3. Working directory: knitr runs this file's chunks with the working
+   directory set to vignettes/, not the package root -- use system.file()
+   or package data (as load_gz_pop_raster() does below), not relative
+   paths, to avoid chunks that only work from one invocation method.
+4. The table1-pure-gravity chunk below is cache = TRUE (see
+   reproduce-mobility-ms_cache/, gitignored) because the fit takes several
+   minutes. Delete that directory, or call knitr::clean_cache(), to force
+   a fresh run -- do this before any build you intend to ship or commit.
+-->
+
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
