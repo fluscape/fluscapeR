@@ -41,6 +41,9 @@ households <- load_hh_data_long(topdir = fluscape_top_dir)
 # recreate locations information from households
 locations <- unique( households[,c("LOC_ID","LOC_Lat","LOC_Long","URBAN","DIST_FRM_GZ")] )
 
+#' For the first paragraph of the results section, the number of locations is 40
+length(table(participants$LOC_ID))
+
 #' Set area boundary
 long.lim = c( 112.8, 114.2 )
 lat.lim = c( 22.6, 24.0 )

@@ -1,0 +1,61 @@
+---
+title: "Reproducing the manuscript's figures and tables"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Reproducing the manuscript's figures and tables}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+<!-- TODO: intro prose. Should cover:
+- What this vignette is for (the single entry point for reproducing the
+  manuscript's figures/tables once fluscapeR is installed).
+- Current scope: Figure 2 and Table 1's pure-gravity row only -- say so
+  plainly, don't let the reader assume more is covered.
+- That everything below runs on the public, jittered contact data
+  (`contacts_V1_jittered_100m`) by default, so it works for anyone with
+  just the installed package -- contrasted with the actual published
+  figures, which use real household coordinates not shipped here. -->
+
+## Figure 2: study design
+
+<!-- TODO: prose explaining what panels A/B/C show and why the figure
+matters for the paper. Also note panel B here is a general resample of
+eligible individuals (see `?fig_study_design_panel_trajectories`), not the
+exact hand-picked set in the published figure. -->
+
+```{r fig-study-design, fig.width = 14, fig.height = 8}
+fig_study_design(contacts_V1_jittered_100m, load_gz_pop_raster())
+```
+
+## Table 1: pure gravity
+
+<!-- TODO: prose explaining the pure-gravity model (one free parameter, no
+offset, no destination power) and pointing out this is only one of six
+model rows in the published table. -->
+
+`noRepeats` is set to 1 below to keep this vignette's build time
+reasonable; increase it for a more rigorous multi-start fit. This chunk is
+cached (see `vignettes/reproduce-manuscript_cache/`, gitignored) since the
+fit takes several minutes -- delete the cache directory (or
+`knitr::clean_cache()`) to force a fresh run, e.g. before a build you
+intend to ship or commit.
+
+```{r table1-pure-gravity, cache = TRUE}
+knitr::kable(
+  table1_pure_gravity(contacts_V1_jittered_100m, load_gz_pop_raster(), noRepeats = 1)
+)
+```
+
+## Not yet implemented
+
+- The other five Table 1 model rows: pure radiation, offset radiation, and
+  the two gravity + offset / destination-power combinations.
+- The other seven manuscript figures.
