@@ -12,16 +12,20 @@ Developing this vignette:
 
 1. Load your in-development code, not an installed copy:
      devtools::load_all()
-2. Preview/knit against that dev-loaded code with devtools::build_rmd(),
-   not a plain "Knit"/"Render" button or raw rmarkdown::render():
-     devtools::build_rmd("vignettes/reproduce-mobility-ms.Rmd")
-   build_rmd() knits against whatever load_all() currently has loaded and
-   builds in a temp copy, so it won't leave stray .html/.md files here for
-   you to accidentally commit. A bare library(fluscapeR) call, or hitting
-   an IDE's Knit button directly, may instead use the last *installed*
-   version and silently ignore your edits -- some IDEs (confirmed for
+2. Preview/knit against that dev-loaded code in the SAME R session:
+     rmarkdown::render("vignettes/reproduce-mobility-ms.Rmd", output_dir = tempdir())
+   (output_dir = tempdir() keeps the rendered .html out of this directory,
+   so you don't accidentally commit it -- the knitr cache still lands in
+   vignettes/reproduce-mobility-ms_cache/, which is the point, see #4.)
+   devtools::build_rmd()/build_vignettes() are both deprecated AND wrong
+   for this: they knit in an isolated callr subprocess that does NOT
+   inherit load_all()'s state (confirmed empirically -- it fails with
+   "could not find function ..." for any package function). A bare
+   library(fluscapeR) call, or hitting an IDE's Knit button directly, has
+   the same problem from a different cause: it uses the last *installed*
+   version and silently ignores your edits -- some IDEs (confirmed for
    RStudio; untested for VS Code) spawn a fresh R session for Knit, which
-   won't see your load_all() state at all.
+   never saw your load_all() call either.
 3. Working directory: knitr runs this file's chunks with the working
    directory set to vignettes/, not the package root -- use system.file()
    or package data (as load_gz_pop_raster() does below), not relative
@@ -68,7 +72,7 @@ model rows in the published table. -->
 
 `noRepeats` is set to 1 below to keep this vignette's build time
 reasonable; increase it for a more rigorous multi-start fit. This chunk is
-cached (see `vignettes/reproduce-manuscript_cache/`, gitignored) since the
+cached (see `vignettes/reproduce-mobility-ms_cache/`, gitignored) since the
 fit takes several minutes -- delete the cache directory (or
 `knitr::clean_cache()`) to force a fresh run, e.g. before a build you
 intend to ship or commit.
@@ -79,8 +83,36 @@ knitr::kable(
 )
 ```
 
+## Figure 8: the S matrix for the radiation model
+
+<!-- TODO: prose explaining what the S matrix represents (population
+within distance r_ij of each origin cell, per Figure 8's published
+caption/algorithm) and why the demo below uses an aggregated raster rather
+than the full-resolution one the published figure's S matrix was actually
+built from. -->
+
+`generate.agg.Smatrix()` optionally aggregates the population raster
+before computing the S matrix (`agg_num` cells merged into one), trading
+resolution for speed. At full resolution (`agg_num = 0`) this is still on
+the order of minutes even with the vectorized implementation used below
+(`vectorized = TRUE`) -- see `?generate.agg.Smatrix`. This chunk uses
+`agg_num = 10` to stay fast; increase/zero it to build the matrix actually
+used for model fitting.
+
+```{r s-matrix, cache = TRUE}
+s_demo <- generate.agg.Smatrix(
+  contacts_V1_jittered_100m, load_gz_pop_raster(),
+  agg_num = 10, vectorized = TRUE
+)
+dim(s_demo$S)
+```
+
 ## Not yet implemented
 
 - The other five Table 1 model rows: pure radiation, offset radiation, and
-  the two gravity + offset / destination-power combinations.
+  the two gravity + offset / destination-power combinations. These used to
+  be driven by `data-raw/read_reproduce.r` + `jobs.sh` (a batch sweep over
+  `reproduce.fit.mobility()`'s `jobType` 1-6); that dispatch logic is the
+  template to follow when porting each remaining row into an R/ function
+  on the same pattern as `fit_pure_gravity()`.
 - The other seven manuscript figures.
